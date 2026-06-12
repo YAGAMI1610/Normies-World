@@ -1,0 +1,406 @@
+// apps/server/src/prisma/schema.prisma
+// Normies Alpha — full data model
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =====================================================================
+// USERS & WALLETS
+// =====================================================================
+
+model User {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  primaryWallet  String?  @unique
+  email          String?  @unique
+  telegramChatId String?
+  discordWebhook String?
+
+  wallets         Wallet[]
+  alertPrefs      AlertPreference[]
+  reputation      Reputation?
+  battleStats     BattleStats?
+  notifications   Notification[]
+  followingWhales WhaleFollow[]
+  matchesAsP1     Match[]  @relation("MatchPlayer1")
+  matchesAsP2     Match[]  @relation("MatchPlayer2")
+  leaderboardEntries LeaderboardEntry[]
+}
+
+model Wallet {
+  id           String   @id @default(cuid())
+  address      String   @unique
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id])
+
+  isWhale      Boolean  @default(false)
+  whaleScore   Float?
+
+  firstSeen    DateTime @default(now())
+  lastActive   DateTime @updatedAt
+
+  ownerships       NormieOwnership[]
+  transfersFrom    Transfer[] @relation("TransferFrom")
+  transfersTo      Transfer[] @relation("TransferTo")
+
+  @@index([userId])
+}
+
+// =====================================================================
+// NORMIES / TRAITS
+// =====================================================================
+
+model Normie {
+  tokenId      Int      @id // 0-9999
+  ownerAddress String?
+
+  // From /normie/:id/metadata + /normie/:id/canvas/info
+  level        Int      @default(1)
+  actionPoints Int      @default(0)
+  customized   Boolean  @default(false)
+  pixelCount   Int?
+
+  // Computed rarity (across full 10k trait distribution)
+  rarityScore  Float?
+  rarityRank   Int?
+
+  // ERC-8004 agent binding (from /agents/binding/:tokenId)
+  agentBound   Boolean  @default(false)
+  agentId      String?
+
+  lastSyncedAt DateTime @updatedAt
+
+  traits       Trait[]
+  ownerships   NormieOwnership[]
+  transfers    Transfer[]
+  sales        Sale[]
+  battleCard   BattleCard?
+
+  @@index([rarityRank])
+}
+
+model Trait {
+  id        String  @id @default(cuid())
+  tokenId   Int
+  normie    Normie  @relation(fields: [tokenId], references: [tokenId], onDelete: Cascade)
+
+  // Categories per the Normies trait table:
+  // Type, Gender, Age, Hair Style, Facial Feature, Eyes, Expression, Accessory
+  category  String
+  value     String
+
+  @@unique([tokenId, category])
+  @@index([category, value])
+}
+
+// =====================================================================
+// OWNERSHIP & TRANSFERS (indexed from on-chain Transfer events)
+// =====================================================================
+
+model NormieOwnership {
+  id         String   @id @default(cuid())
+  tokenId    Int
+  normie     Normie   @relation(fields: [tokenId], references: [tokenId], onDelete: Cascade)
+
+  walletId   String
+  wallet     Wallet   @relation(fields: [walletId], references: [id])
+
+  acquiredAt DateTime
+  acquiredTx String
+
+  current    Boolean  @default(true)
+  releasedAt DateTime?
+
+  @@index([walletId, current])
+  @@index([tokenId, current])
+}
+
+model Transfer {
+  id           String   @id @default(cuid())
+  tokenId      Int
+  normie       Normie   @relation(fields: [tokenId], references: [tokenId], onDelete: Cascade)
+
+  fromAddress  String
+  toAddress    String
+
+  fromWalletId String?
+  toWalletId   String?
+  fromWallet   Wallet?  @relation("TransferFrom", fields: [fromWalletId], references: [id])
+  toWallet     Wallet?  @relation("TransferTo", fields: [toWalletId], references: [id])
+
+  blockNumber  BigInt
+  txHash       String   @unique
+  timestamp    DateTime
+
+  @@index([timestamp])
+  @@index([tokenId])
+  @@index([toAddress])
+  @@index([fromAddress])
+}
+
+// =====================================================================
+// SALES / MARKET DATA (from MarketDataProvider, e.g. Reservoir)
+// =====================================================================
+
+model Sale {
+  id          String   @id @default(cuid())
+  tokenId     Int
+  normie      Normie   @relation(fields: [tokenId], references: [tokenId], onDelete: Cascade)
+
+  marketplace String   // e.g. "reservoir-aggregated"
+  priceEth    Float
+  buyer       String
+  seller      String
+  txHash      String   @unique
+  timestamp   DateTime
+
+  @@index([timestamp])
+  @@index([tokenId])
+}
+
+// =====================================================================
+// WHALES
+// =====================================================================
+
+model Whale {
+  walletAddress       String   @id
+  holdingsCount       Int
+  avgHoldDurationDays Float
+  realizedGainsEth    Float    @default(0)
+  unrealizedGainsEth  Float    @default(0)
+
+  // JSON: { [category]: { [value]: weight } }
+  rarityPreference    Json
+
+  whaleScore          Float    // 0-100
+  lastCalculated      DateTime @updatedAt
+
+  followers           WhaleFollow[]
+}
+
+model WhaleFollow {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+
+  whaleAddress String
+  whale        Whale    @relation(fields: [whaleAddress], references: [walletAddress])
+
+  createdAt    DateTime @default(now())
+
+  @@unique([userId, whaleAddress])
+}
+
+// =====================================================================
+// REPUTATION
+// =====================================================================
+
+model Reputation {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+
+  score     Int      @default(0)
+  level     Int      @default(1)
+  xp        Int      @default(0)
+
+  badges    Badge[]
+  updatedAt DateTime @updatedAt
+}
+
+model Badge {
+  id           String     @id @default(cuid())
+  reputationId String
+  reputation   Reputation @relation(fields: [reputationId], references: [id], onDelete: Cascade)
+
+  // AlphaCollector | Whale | DiamondHands | Strategist | BattleMaster | NormiesLegend
+  type         String
+  awardedAt    DateTime   @default(now())
+
+  @@unique([reputationId, type])
+}
+
+// =====================================================================
+// ALERTS / NOTIFICATIONS
+// =====================================================================
+
+model AlertPreference {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  // WHALE | TRAIT | PRICE | HOLDER
+  type      String
+  threshold Json?
+  channels  String[] // ["inapp","email","telegram","discord"]
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Alert {
+  id        String   @id @default(cuid())
+
+  // WHALE_ACCUMULATION | WHALE_LIQUIDATION | TRAIT_SPIKE | TRAIT_RARITY_SHIFT |
+  // FLOOR_CHANGE | RAPID_APPRECIATION | UNUSUAL_SALE | HOLDER_BUY | HOLDER_SELL |
+  // REPUTATION_LEADER_MOVE
+  type      String
+  severity  String   // info | warning | critical
+  message   String
+  payload   Json
+
+  createdAt DateTime @default(now())
+
+  notifications Notification[]
+
+  @@index([createdAt])
+  @@index([type])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  alertId   String?
+  alert     Alert?   @relation(fields: [alertId], references: [id])
+
+  channel   String   // inapp | email | telegram | discord
+  status    String   @default("pending") // pending | sent | failed
+  sentAt    DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, status])
+}
+
+// =====================================================================
+// TIME MACHINE
+// =====================================================================
+
+model HistoricalSnapshot {
+  id                    String   @id @default(cuid())
+  date                  DateTime @unique
+
+  holderCount           Int
+  floorPriceEth         Float?
+  volumeEth             Float?
+
+  // { category, value, count }[]
+  topTraits             Json
+  // { address, holdings, rank }[]
+  whaleLeaderboard      Json
+  // { bucket, walletCount, tokenCount }[]
+  ownershipDistribution Json
+
+  createdAt             DateTime @default(now())
+}
+
+// =====================================================================
+// AI INSIGHTS
+// =====================================================================
+
+model AIInsight {
+  id           String   @id @default(cuid())
+
+  // DAILY_MARKET | WHALE_BEHAVIOR | TRAIT_TREND
+  type         String
+  title        String
+  body         String
+
+  // Structured data snapshot the AI was given (for audit / no-hallucination guarantee)
+  dataSnapshot Json
+  citedMetrics Json?
+
+  generatedAt  DateTime @default(now())
+
+  @@index([type, generatedAt])
+}
+
+// =====================================================================
+// BATTLE CARDS / GAME
+// =====================================================================
+
+model BattleCard {
+  id                 String @id @default(cuid())
+  tokenId            Int    @unique
+  normie             Normie @relation(fields: [tokenId], references: [tokenId], onDelete: Cascade)
+
+  attack             Int
+  defense            Int
+  speed              Int
+
+  specialAbility     String
+  abilityDescription String
+  abilityTraitSource String
+
+  // Common | Uncommon | Rare | Epic | Legendary
+  rarityTier         String
+
+  generatedAt        DateTime @updatedAt
+}
+
+model BattleStats {
+  id        String @id @default(cuid())
+  userId    String @unique
+  user      User   @relation(fields: [userId], references: [id])
+
+  wins      Int    @default(0)
+  losses    Int    @default(0)
+  draws     Int    @default(0)
+  winStreak Int    @default(0)
+  elo       Int    @default(1000)
+  rank      String @default("Unranked")
+
+  updatedAt DateTime @updatedAt
+}
+
+model Match {
+  id        String   @id @default(cuid())
+
+  // RANKED | CASUAL | TOURNAMENT | FRIENDS
+  mode      String
+
+  player1Id String
+  player1   User @relation("MatchPlayer1", fields: [player1Id], references: [id])
+
+  player2Id String
+  player2   User @relation("MatchPlayer2", fields: [player2Id], references: [id])
+
+  winnerId  String?
+
+  // Full game state / move log
+  state     Json
+
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+
+  @@index([player1Id])
+  @@index([player2Id])
+  @@index([mode, startedAt])
+}
+
+model LeaderboardEntry {
+  id        String @id @default(cuid())
+  userId    String
+  user      User   @relation(fields: [userId], references: [id])
+
+  // BATTLE | REPUTATION | WHALE
+  category  String
+  rank      Int
+  score     Float
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, category])
+  @@index([category, rank])
+}
