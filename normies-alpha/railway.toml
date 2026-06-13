@@ -1,18 +1,6 @@
-[build]
-builder = "DOCKERFILE"
-dockerfilePath = "apps/server/Dockerfile"
-
 [deploy]
 startCommand = "node apps/server/dist/app.js"
 healthcheckPath = "/health"
-healthcheckTimeout = 30
+healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
-
-[[services]]
-name = "normies-server"
-source = "."
-
-[services.variables]
-PORT = "4000"
-NODE_ENV = "production"
