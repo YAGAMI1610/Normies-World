@@ -2,8 +2,10 @@
 // Normies Alpha — Express + Socket.io server
 
 import 'dotenv/config';
+import { existsSync } from 'fs';
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
 import { createServer } from 'http';
 import { Server as SocketServer } from 'socket.io';
 import { redis } from './lib/redis';
@@ -51,8 +53,19 @@ app.use(express.json());
 // Health check
 app.get('/health', (_req, res) => res.json({ ok: true, ts: Date.now() }));
 
+// Serve built frontend if available
+const frontendRoot = path.join(__dirname, '../../web/.next');
+const frontendIndexPath = path.join(frontendRoot, 'server', 'app', 'index.html');
+
+app.use('/_next', express.static(frontendRoot));
+
 // Root route
 app.get('/', (_req, res) => {
+  if (existsSync(frontendIndexPath)) {
+    res.sendFile(frontendIndexPath);
+    return;
+  }
+
   res.json({ status: 'Normies-World API is live', timestamp: Date.now() });
 });
 
