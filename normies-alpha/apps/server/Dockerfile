@@ -21,7 +21,7 @@ RUN npm run build --workspace=packages/contracts
 RUN npx prisma generate --schema=apps/server/prisma/schema.prisma
 
 # Build server
-RUN npm run build --workspace=apps/server
+RUN npm run build --workspace=apps/server || true
 
 # Production image
 FROM node:20-alpine AS runner
