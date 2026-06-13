@@ -19,3 +19,4 @@ RUN ls apps/server/dist/app.js 2>/dev/null || (mkdir -p apps/server/dist && echo
 
 EXPOSE 4000
 CMD ["node", "apps/server/dist/app.js"]
+# force rebuild Sat Jun 13 19:32:03 UTC 2026
