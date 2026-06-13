@@ -3,7 +3,7 @@ import { Router, Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { cached } from '../lib/redis';
 import { normiesApi } from '../services/normiesApiClient';
-import { generateCardFromNormie } from '../services/cardGenEngine';
+import { getOrCreateBattleCard } from '../services/cardGenEngine';
 import type { AuthRequest } from '../middleware/auth';
 
 const router = Router();
@@ -72,55 +72,38 @@ router.get('/my-cards', async (req: AuthRequest, res: Response) => {
     // Generate/retrieve battle cards for each token
     const cards = await Promise.all(
       tokenIds.map(async (tokenId) => {
-        // Check if card already generated
-        let card = await prisma.battleCard.findUnique({
-          where: { tokenId },
-          include: { normie: { include: { traits: true } } },
-        });
-
-        if (!card) {
-          // Generate card from Normies API data
-          try {
-            const [traits, metadata] = await Promise.all([
-              normiesApi.traits(tokenId),
-              normiesApi.metadata(tokenId),
-            ]);
-            card = await generateCardFromNormie(tokenId, traits, metadata);
-          } catch {
-            // Return a basic card if API fails
-            return {
-              tokenId,
-              name: `Normie #${tokenId}`,
-              imageUrl: normiesApi.imagePngUrl(tokenId),
-              rarityRank: null,
-              rarityTier: 'Common',
-              attack: 50,
-              defense: 50,
-              speed: 50,
-              ability: 'Normie Strike',
-              abilityDescription: 'A basic attack.',
-              traits: {},
-              owned: true,
-            };
-          }
+        let card;
+        try {
+          card = await getOrCreateBattleCard(tokenId);
+        } catch {
+          return {
+            tokenId,
+            name: `Normie #${tokenId}`,
+            imageUrl: normiesApi.imagePngUrl(tokenId),
+            rarityRank: null,
+            rarityTier: 'Common',
+            attack: 50,
+            defense: 50,
+            speed: 50,
+            ability: 'Normie Strike',
+            abilityDescription: 'A basic attack.',
+            traits: {},
+            owned: true,
+          };
         }
 
-        const traitMap = card?.normie?.traits
-          ? Object.fromEntries(card?.normie.traits.map(t => [t.category, t.value]))
-          : {};
-
         return {
-          tokenId: card?.tokenId,
-          name: card?.normie?.rarityRank ? `Normie #${tokenId}` : `Normie #${tokenId}`,
-          imageUrl: normiesApi.imagePngUrl(tokenId),
-          rarityRank: card?.normie?.rarityRank ?? null,
-          rarityTier: card?.rarityTier,
-          attack: card?.attack,
-          defense: card?.defense,
-          speed: card?.speed,
-          ability: card?.specialAbility,
-          abilityDescription: card?.abilityDescription,
-          traits: traitMap,
+          tokenId: card.tokenId,
+          name: card.name,
+          imageUrl: card.imageUrl,
+          rarityRank: card.rarityRank ?? null,
+          rarityTier: card.rarityTier,
+          attack: card.attack,
+          defense: card.defense,
+          speed: card.speed,
+          ability: card.specialAbility,
+          abilityDescription: card.abilityDescription,
+          traits: {},
           owned: true,
         };
       })
@@ -141,22 +124,7 @@ router.get('/card/:tokenId', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Invalid tokenId' });
     }
 
-    let card = await prisma.battleCard.findUnique({
-      where: { tokenId },
-      include: { normie: { include: { traits: true } } },
-    });
-
-    if (!card) {
-      const [traits, metadata] = await Promise.all([
-        normiesApi.traits(tokenId),
-        normiesApi.metadata(tokenId),
-      ]);
-      card = await generateCardFromNormie(tokenId, traits, metadata);
-    }
-
-    const traitMap = card?.normie?.traits
-      ? Object.fromEntries(card?.normie.traits.map(t => [t.category, t.value]))
-      : {};
+    const card = await getOrCreateBattleCard(tokenId);
 
     // Check ownership
     let owned = false;
@@ -168,17 +136,17 @@ router.get('/card/:tokenId', async (req: Request, res: Response) => {
     }
 
     res.json({
-      tokenId: card?.tokenId,
-      name: `Normie #${tokenId}`,
-      imageUrl: normiesApi.imagePngUrl(tokenId),
-      rarityRank: card?.normie?.rarityRank ?? null,
-      rarityTier: card?.rarityTier,
-      attack: card?.attack,
-      defense: card?.defense,
-      speed: card?.speed,
-      ability: card?.specialAbility,
-      abilityDescription: card?.abilityDescription,
-      traits: traitMap,
+      tokenId: card.tokenId,
+      name: card.name,
+      imageUrl: card.imageUrl,
+      rarityRank: card.rarityRank ?? null,
+      rarityTier: card.rarityTier,
+      attack: card.attack,
+      defense: card.defense,
+      speed: card.speed,
+      ability: card.specialAbility,
+      abilityDescription: card.abilityDescription,
+      traits: {},
       owned,
     });
   } catch (err) {

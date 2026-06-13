@@ -67,7 +67,7 @@ router.get('/profile/:whaleAddress', async (req: Request, res: Response) => {
       score: user.reputation?.score ?? 0,
       level: user.reputation?.level ?? 1,
       xp: user.reputation?.xp ?? 0,
-      badges: user.reputation??.badges ?? [],
+      badges: user.reputation?.badges ?? [],
       rank: rank + 1,
     });
   } catch (err) {

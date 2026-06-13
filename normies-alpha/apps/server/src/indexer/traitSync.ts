@@ -1,1 +1,7 @@
-export const traitSync = { start: () => console.log('trait sync started') };
+import { syncAllTraits as syncAllTraitsImpl } from '../services/traitSync';
+
+export const traitSync = {
+  start: () => syncAllTraitsImpl(),
+};
+
+export { syncAllTraitsImpl as syncAllTraits };
