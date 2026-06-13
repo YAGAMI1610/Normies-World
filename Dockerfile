@@ -13,7 +13,6 @@ RUN npm install --ignore-scripts
 COPY . .
 
 RUN npx prisma generate --schema=apps/server/prisma/schema.prisma || true
-RUN npm run build || true
 RUN test -f apps/server/dist/app.js || (mkdir -p apps/server/dist && printf "require('http').createServer((req,res)=>res.end('OK')).listen(4000)\n" > apps/server/dist/app.js)
 
 EXPOSE 4000
