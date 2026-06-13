@@ -19,11 +19,11 @@ router.get('/leaderboard', async (req: Request, res: Response) => {
 
       return reputations.map((r, i) => ({
         userId: r.userId,
-        walletAddress: r.user?.primaryWallet ?? '0x???',
+        whaleAddress: r.user?.primaryWallet ?? '0x???',
         score: r.score,
         level: r.level,
         xp: r.xp,
-        badges: r.badges,
+        badges: r?.badges,
         rank: i + 1,
       }));
     });
@@ -35,10 +35,10 @@ router.get('/leaderboard', async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/reputation/profile/:walletAddress
-router.get('/profile/:walletAddress', async (req: Request, res: Response) => {
+// GET /api/reputation/profile/:whaleAddress
+router.get('/profile/:whaleAddress', async (req: Request, res: Response) => {
   try {
-    const address = req.params.walletAddress.toLowerCase();
+    const address = req.params.whaleAddress.toLowerCase();
 
     const user = await prisma.user.findFirst({
       where: { primaryWallet: address },
@@ -53,7 +53,7 @@ router.get('/profile/:walletAddress', async (req: Request, res: Response) => {
       // Trigger calculation on first access
       await recalculateReputation(user.id);
       const fresh = await prisma.reputation.findUnique({ where: { userId: user.id } });
-      if (!fresh) return res.json({ userId: user.id, walletAddress: address, score: 0, level: 1, xp: 0, badges: [], rank: null });
+      if (!fresh) return res.json({ userId: user.id, whaleAddress: address, score: 0, level: 1, xp: 0, badges: [], rank: null });
     }
 
     // Get rank
@@ -63,11 +63,11 @@ router.get('/profile/:walletAddress', async (req: Request, res: Response) => {
 
     res.json({
       userId: user.id,
-      walletAddress: address,
+      whaleAddress: address,
       score: user.reputation?.score ?? 0,
       level: user.reputation?.level ?? 1,
       xp: user.reputation?.xp ?? 0,
-      badges: user.reputation?.badges ?? [],
+      badges: user.reputation??.badges ?? [],
       rank: rank + 1,
     });
   } catch (err) {

@@ -4,7 +4,7 @@ import { env } from '../lib/env';
 
 export interface AuthRequest extends Request {
   userId?: string;
-  walletAddress?: string;
+  whaleAddress?: string;
 }
 
 export function authMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
@@ -12,9 +12,9 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
   if (!token) return res.status(401).json({ error: 'Unauthorized' });
 
   try {
-    const payload = jwt.verify(token, env.JWT_SECRET) as { userId: string; walletAddress: string };
+    const payload = jwt.verify(token, env.JWT_SECRET) as { userId: string; whaleAddress: string };
     req.userId = payload.userId;
-    req.walletAddress = payload.walletAddress;
+    req.whaleAddress = payload.whaleAddress;
     next();
   } catch {
     return res.status(401).json({ error: 'Invalid token' });
@@ -25,9 +25,9 @@ export function optionalAuth(req: AuthRequest, _res: Response, next: NextFunctio
   const token = req.headers.authorization?.replace('Bearer ', '');
   if (token) {
     try {
-      const payload = jwt.verify(token, env.JWT_SECRET) as { userId: string; walletAddress: string };
+      const payload = jwt.verify(token, env.JWT_SECRET) as { userId: string; whaleAddress: string };
       req.userId = payload.userId;
-      req.walletAddress = payload.walletAddress;
+      req.whaleAddress = payload.whaleAddress;
     } catch { /* ignore */ }
   }
   next();

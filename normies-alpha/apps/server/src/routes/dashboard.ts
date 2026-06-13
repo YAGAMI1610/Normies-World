@@ -34,15 +34,15 @@ router.get('/stats', async (_req: Request, res: Response) => {
       const snap = await prisma.historicalSnapshot.findFirst({
         where: { date: { lte: since24h } },
         orderBy: { date: 'desc' },
-        select: { floorEth: true },
+        select: { floorPriceEth: true },
       }).catch(() => null);
 
-      if (floor?.floorPriceEth && snap?.floorEth) {
-        floorChange24h = ((floor.floorPriceEth - snap.floorEth) / snap.floorEth) * 100;
+      if (floor?.floorPriceEth && snap?.floorPriceEth) {
+        floorChange24h = ((floor.floorPriceEth - snap.floorPriceEth) / snap.floorPriceEth) * 100;
       }
 
       return {
-        floorEth: floor?.floorPriceEth ?? null,
+        floorPriceEth: floor?.floorPriceEth ?? null,
         floorChange24h,
         volume24hEth: volume24h,
         uniqueHolders,

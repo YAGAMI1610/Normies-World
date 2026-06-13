@@ -19,9 +19,9 @@ interface WalletProfile {
   avgHoldDurationDays: number;
 }
 
-async function buildWalletProfile(walletAddress: string): Promise<WalletProfile | null> {
+async function buildWalletProfile(whaleAddress: string): Promise<WalletProfile | null> {
   const wallet = await prisma.wallet.findUnique({
-    where: { address: walletAddress.toLowerCase() },
+    where: { address: whaleAddress.toLowerCase() },
     include: {
       ownerships: {
         where: { current: true },
@@ -175,12 +175,12 @@ export async function findMostSimilarWhales(
   userWalletAddress: string,
   limit = 5
 ): Promise<WhaleSimilarityResult[]> {
-  const whales = await prisma.whale.findMany({ select: { walletAddress: true } });
+  const whales = await prisma.whale.findMany({ select: { whaleAddress: true } });
   const results: WhaleSimilarityResult[] = [];
 
   for (const w of whales) {
-    if (w.walletAddress.toLowerCase() === userWalletAddress.toLowerCase()) continue;
-    const sim = await computeSimilarity(userWalletAddress, w.walletAddress);
+    if (w.whaleAddress.toLowerCase() === userWalletAddress.toLowerCase()) continue;
+    const sim = await computeSimilarity(userWalletAddress, w.whaleAddress);
     if (sim) results.push(sim);
   }
 

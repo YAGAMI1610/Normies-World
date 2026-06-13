@@ -29,7 +29,7 @@ router.get('/snapshot/:date', async (req: Request, res: Response) => {
         return {
           date: snap.date.toISOString().split('T')[0],
           holderCount: snap.holderCount,
-          floorEth: snap.floorPriceEth,
+          floorPriceEth: snap.floorPriceEth,
           transferCount: 0,
           topHolders: snap.whaleLeaderboard as { address: string; count: number }[],
           topTraits: snap.topTraits as { category: string; value: string; count: number }[],
@@ -94,7 +94,7 @@ router.get('/snapshot/:date', async (req: Request, res: Response) => {
       return {
         date: dateStr,
         holderCount: uniqueHolders,
-        floorEth: null, // historical floor not available without price oracle
+        floorPriceEth: null, // historical floor not available without price oracle
         transferCount,
         topHolders,
         topTraits: topTraits.slice(0, 20),

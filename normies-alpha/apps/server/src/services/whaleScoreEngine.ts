@@ -16,7 +16,7 @@ export const WHALE_HOLDING_THRESHOLD = 15;
 export const WHALE_SCORE_THRESHOLD = 70;
 
 interface WalletStats {
-  walletAddress: string;
+  whaleAddress: string;
   holdingsCount: number;
   avgHoldDurationDays: number;
   realizedGainsEth: number;
@@ -25,9 +25,9 @@ interface WalletStats {
   whaleScore: number;
 }
 
-async function computeWalletStats(walletAddress: string): Promise<WalletStats | null> {
+async function computeWalletStats(whaleAddress: string): Promise<WalletStats | null> {
   const wallet = await prisma.wallet.findUnique({
-    where: { address: walletAddress.toLowerCase() },
+    where: { address: whaleAddress.toLowerCase() },
     include: {
       ownerships: {
         where: { current: true },
@@ -81,7 +81,7 @@ async function computeWalletStats(walletAddress: string): Promise<WalletStats | 
   // where this wallet was the seller. Without historical cost-basis data we
   // approximate realized gains as total ETH received from sales as seller.
   const sellSales = await prisma.sale.findMany({
-    where: { seller: walletAddress.toLowerCase() },
+    where: { seller: whaleAddress.toLowerCase() },
   });
   const realizedGainsEth = sellSales.reduce((sum, s) => sum + s.priceEth, 0);
 
@@ -124,7 +124,7 @@ async function computeWalletStats(walletAddress: string): Promise<WalletStats | 
     accumulationBehavior * 0.2;
 
   return {
-    walletAddress: walletAddress.toLowerCase(),
+    whaleAddress: whaleAddress.toLowerCase(),
     holdingsCount,
     avgHoldDurationDays,
     realizedGainsEth,
@@ -135,8 +135,8 @@ async function computeWalletStats(walletAddress: string): Promise<WalletStats | 
 }
 
 /** Recompute and persist whale stats for a single wallet. Returns null if the wallet holds nothing. */
-export async function recalculateWhale(walletAddress: string) {
-  const stats = await computeWalletStats(walletAddress);
+export async function recalculateWhale(whaleAddress: string) {
+  const stats = await computeWalletStats(whaleAddress);
   if (!stats) return null;
 
   const isWhale =
@@ -144,15 +144,15 @@ export async function recalculateWhale(walletAddress: string) {
     stats.whaleScore >= WHALE_SCORE_THRESHOLD;
 
   await prisma.wallet.update({
-    where: { address: stats.walletAddress },
+    where: { address: stats.whaleAddress },
     data: { isWhale, whaleScore: stats.whaleScore },
   });
 
   if (isWhale) {
     await prisma.whale.upsert({
-      where: { walletAddress: stats.walletAddress },
+      where: { whaleAddress: stats.whaleAddress },
       create: {
-        walletAddress: stats.walletAddress,
+        whaleAddress: stats.whaleAddress,
         holdingsCount: stats.holdingsCount,
         avgHoldDurationDays: stats.avgHoldDurationDays,
         realizedGainsEth: stats.realizedGainsEth,
@@ -170,7 +170,7 @@ export async function recalculateWhale(walletAddress: string) {
       },
     });
   } else {
-    await prisma.whale.deleteMany({ where: { walletAddress: stats.walletAddress } });
+    await prisma.whale.deleteMany({ where: { whaleAddress: stats.whaleAddress } });
   }
 
   return stats;

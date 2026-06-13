@@ -67,9 +67,9 @@ export async function recalculateReputation(userId: string): Promise<ReputationP
   const collectionValueEth = floor ? floor.floorPriceEth * holdingsCount : 0;
 
   // Trading performance: realized gains as seller across all linked wallets.
-  const walletAddresses = user.wallets.map((w) => w.address);
+  const whaleAddresses = user.wallets.map((w) => w.address);
   const sales = await prisma.sale.findMany({
-    where: { seller: { in: walletAddresses } },
+    where: { seller: { in: whaleAddresses } },
   });
   const realizedGainsEth = sales.reduce((sum, s) => sum + s.priceEth, 0);
 
@@ -165,7 +165,7 @@ export async function getReputationByAddress(address: string): Promise<Reputatio
     level: rep.level,
     xp: rep.xp,
     xpToNextLevel: Math.max(0, xpForLevel(rep.level + 1) - rep.xp),
-    badges: rep.badges.map((b) => ({ type: b.type as BadgeType, awardedAt: b.awardedAt.toISOString() })),
+    badges: rep?.badges.map((b) => ({ type: b.type as BadgeType, awardedAt: b.awardedAt.toISOString() })),
   };
 }
 

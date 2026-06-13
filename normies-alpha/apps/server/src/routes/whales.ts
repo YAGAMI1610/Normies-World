@@ -35,9 +35,9 @@ router.get('/', async (req: AuthRequest, res: Response) => {
     if (req.userId) {
       const follows = await prisma.whaleFollow.findMany({
         where: { userId: req.userId },
-        select: { walletAddress: true },
+        select: { whaleAddress: true },
       });
-      const followedSet = new Set(follows.map(f => f.walletAddress));
+      const followedSet = new Set(follows.map(f => f.whaleAddress));
       return res.json(data.map((w: any) => ({ ...w, followed: followedSet.has(w.address) })));
     }
 
@@ -86,9 +86,9 @@ router.get('/:address', async (req: Request, res: Response) => {
 router.post('/:address/follow', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     await prisma.whaleFollow.upsert({
-      where: { userId_walletAddress: { userId: req.userId!, walletAddress: req.params.address.toLowerCase() } },
+      where: { userId_whaleAddress: { userId: req.userId!, whaleAddress: req.params.address.toLowerCase() } },
       update: {},
-      create: { userId: req.userId!, walletAddress: req.params.address.toLowerCase() },
+      create: { userId: req.userId!, whaleAddress: req.params.address.toLowerCase() },
     });
     res.json({ ok: true });
   } catch (err) {
@@ -100,7 +100,7 @@ router.post('/:address/follow', authMiddleware, async (req: AuthRequest, res: Re
 router.delete('/:address/follow', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     await prisma.whaleFollow.deleteMany({
-      where: { userId: req.userId!, walletAddress: req.params.address.toLowerCase() },
+      where: { userId: req.userId!, whaleAddress: req.params.address.toLowerCase() },
     });
     res.json({ ok: true });
   } catch (err) {

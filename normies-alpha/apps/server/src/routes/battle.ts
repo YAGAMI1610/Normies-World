@@ -22,7 +22,7 @@ router.get('/leaderboard', async (req: Request, res: Response) => {
 
       return stats.map((s, i) => ({
         userId: s.userId,
-        walletAddress: s.user?.primaryWallet ?? '0x???',
+        whaleAddress: s.user?.primaryWallet ?? '0x???',
         elo: s.elo,
         wins: s.wins,
         losses: s.losses,
@@ -41,11 +41,11 @@ router.get('/leaderboard', async (req: Request, res: Response) => {
 // GET /api/battle/my-cards — returns battle cards for connected wallet's Normies
 router.get('/my-cards', async (req: AuthRequest, res: Response) => {
   try {
-    if (!req.walletAddress) {
+    if (!req.whaleAddress) {
       return res.status(401).json({ error: 'Wallet not connected' });
     }
 
-    const address = req.walletAddress.toLowerCase();
+    const address = req.whaleAddress.toLowerCase();
 
     // Get tokenIds from Normies API
     let tokenIds: number[] = [];
@@ -105,21 +105,21 @@ router.get('/my-cards', async (req: AuthRequest, res: Response) => {
           }
         }
 
-        const traitMap = card.normie?.traits
-          ? Object.fromEntries(card.normie.traits.map(t => [t.category, t.value]))
+        const traitMap = card?.normie?.traits
+          ? Object.fromEntries(card?.normie.traits.map(t => [t.category, t.value]))
           : {};
 
         return {
-          tokenId: card.tokenId,
-          name: card.normie?.rarityRank ? `Normie #${tokenId}` : `Normie #${tokenId}`,
+          tokenId: card?.tokenId,
+          name: card?.normie?.rarityRank ? `Normie #${tokenId}` : `Normie #${tokenId}`,
           imageUrl: normiesApi.imagePngUrl(tokenId),
-          rarityRank: card.normie?.rarityRank ?? null,
-          rarityTier: card.rarityTier,
-          attack: card.attack,
-          defense: card.defense,
-          speed: card.speed,
-          ability: card.specialAbility,
-          abilityDescription: card.abilityDescription,
+          rarityRank: card?.normie?.rarityRank ?? null,
+          rarityTier: card?.rarityTier,
+          attack: card?.attack,
+          defense: card?.defense,
+          speed: card?.speed,
+          ability: card?.specialAbility,
+          abilityDescription: card?.abilityDescription,
           traits: traitMap,
           owned: true,
         };
@@ -154,8 +154,8 @@ router.get('/card/:tokenId', async (req: Request, res: Response) => {
       card = await generateCardFromNormie(tokenId, traits, metadata);
     }
 
-    const traitMap = card.normie?.traits
-      ? Object.fromEntries(card.normie.traits.map(t => [t.category, t.value]))
+    const traitMap = card?.normie?.traits
+      ? Object.fromEntries(card?.normie.traits.map(t => [t.category, t.value]))
       : {};
 
     // Check ownership
@@ -163,21 +163,21 @@ router.get('/card/:tokenId', async (req: Request, res: Response) => {
     const ownerData = await normiesApi.owner(tokenId).catch(() => null);
     if (ownerData) {
       const authReq = req as AuthRequest;
-      owned = !!(authReq.walletAddress &&
-        ownerData.owner.toLowerCase() === authReq.walletAddress.toLowerCase());
+      owned = !!(authReq.whaleAddress &&
+        ownerData.owner.toLowerCase() === authReq.whaleAddress.toLowerCase());
     }
 
     res.json({
-      tokenId: card.tokenId,
+      tokenId: card?.tokenId,
       name: `Normie #${tokenId}`,
       imageUrl: normiesApi.imagePngUrl(tokenId),
-      rarityRank: card.normie?.rarityRank ?? null,
-      rarityTier: card.rarityTier,
-      attack: card.attack,
-      defense: card.defense,
-      speed: card.speed,
-      ability: card.specialAbility,
-      abilityDescription: card.abilityDescription,
+      rarityRank: card?.normie?.rarityRank ?? null,
+      rarityTier: card?.rarityTier,
+      attack: card?.attack,
+      defense: card?.defense,
+      speed: card?.speed,
+      ability: card?.specialAbility,
+      abilityDescription: card?.abilityDescription,
       traits: traitMap,
       owned,
     });

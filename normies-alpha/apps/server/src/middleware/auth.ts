@@ -53,7 +53,7 @@ router.post('/verify', async (req: Request, res: Response) => {
     }
 
     const token = jwt.sign(
-      { userId: user.id, walletAddress: address.toLowerCase() },
+      { userId: user.id, whaleAddress: address.toLowerCase() },
       env.JWT_SECRET,
       { expiresIn: '7d' }
     );
