@@ -13,9 +13,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.normiesApi = void 0;
 const axios_1 = __importDefault(require("axios"));
-const env_1 = require("../lib/env");
 const redis_1 = require("../lib/redis");
-const BASE = env_1.env.NORMIES_API_URL;
+const BASE = process.env.NORMIES_API_URL;
 const http = axios_1.default.create({
     baseURL: BASE,
     timeout: 15_000,

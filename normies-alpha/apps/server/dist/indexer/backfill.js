@@ -10,7 +10,6 @@ exports.runBackfill = runBackfill;
 const contracts_1 = require("@normies-alpha/contracts");
 const chain_1 = require("./chain");
 const transferHandler_1 = require("./transferHandler");
-const env_1 = require("../lib/env");
 const prisma_1 = require("../lib/prisma");
 const CHUNK_SIZE = 5000n;
 async function getBackfillCursor() {
@@ -21,7 +20,7 @@ async function getBackfillCursor() {
     });
     if (latest)
         return latest.blockNumber + 1n;
-    return env_1.env.NORMIES_DEPLOY_BLOCK;
+    return BigInt(process.env.NORMIES_DEPLOY_BLOCK ?? 0);
 }
 async function runBackfill(toBlock) {
     const head = toBlock ?? (await chain_1.publicClient.getBlockNumber());
@@ -30,7 +29,7 @@ async function runBackfill(toBlock) {
     while (from <= head) {
         const to = from + CHUNK_SIZE - 1n > head ? head : from + CHUNK_SIZE - 1n;
         const logs = await chain_1.publicClient.getLogs({
-            address: env_1.env.NORMIES_CONTRACT_ADDRESS,
+            address: process.env.NORMIES_CONTRACT_ADDRESS,
             event: contracts_1.erc721TransferAbi[0],
             fromBlock: from,
             toBlock: to,

@@ -14,10 +14,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.generateDailyMarketInsight = generateDailyMarketInsight;
 exports.getLatestInsight = getLatestInsight;
 const openai_1 = __importDefault(require("openai"));
-const env_1 = require("../lib/env");
 const prisma_1 = require("../lib/prisma");
 const marketDataProvider_1 = require("./marketDataProvider");
-const openai = env_1.env.OPENAI_API_KEY ? new openai_1.default({ apiKey: env_1.env.OPENAI_API_KEY }) : null;
+const openai = process.env.OPENAI_API_KEY ? new openai_1.default({ apiKey: process.env.OPENAI_API_KEY }) : null;
 async function buildMarketSnapshot() {
     const now = new Date();
     const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -111,7 +110,7 @@ async function generateDailyMarketInsight() {
     let citedMetrics;
     if (openai) {
         const completion = await openai.chat.completions.create({
-            model: env_1.env.OPENAI_MODEL,
+            model: process.env.OPENAI_MODEL,
             messages: [
                 { role: "system", content: SYSTEM_PROMPT },
                 { role: "user", content: JSON.stringify(snapshot) },

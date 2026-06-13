@@ -4,6 +4,7 @@
 // server (e.g. as its own Railway service / Docker container):
 //   npm run start:indexer
 
+import 'dotenv/config';
 import { runBackfill } from "./backfill";
 import { startTransferWatcher } from "./transferWatcher";
 import { scheduleSnapshotJob } from "./snapshotJob";

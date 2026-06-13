@@ -1,14 +1,13 @@
 // apps/server/src/lib/prisma.ts
 import { PrismaClient } from '@prisma/client';
-import { env } from './env';
 
 const prismaClientSingleton = () =>
   new PrismaClient({
-    log: env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'],
+    log: process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'],
     errorFormat: 'pretty',
     datasources: {
       db: {
-        url: env.DATABASE_URL,
+        url: process.env.DATABASE_URL,
       },
     },
   });
@@ -20,6 +19,6 @@ declare global {
 
 export const prisma = global.__prisma ?? prismaClientSingleton();
 
-if (env.NODE_ENV !== 'production') {
+if (process.env.NODE_ENV !== 'production') {
   global.__prisma = prisma;
 }

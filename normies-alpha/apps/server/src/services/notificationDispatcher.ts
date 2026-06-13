@@ -7,8 +7,7 @@
 
 import axios from 'axios';
 import { prisma } from '../lib/prisma';
-import { sendEmail } from './email';
-import { env } from '../lib/env';
+import { sendEmailAlert } from './email';
 import type { AlertType } from '@normies-alpha/shared-types';
 
 interface AlertPayload {
@@ -46,7 +45,7 @@ async function dispatchInApp(alert: AlertPayload): Promise<void> {
 
 // ── Email ────────────────────────────────────────────────────────────────────
 async function dispatchEmail(alert: AlertPayload): Promise<void> {
-  if (!env.SMTP_HOST) return;
+  if (!process.env.SMTP_HOST) return;
 
   const prefs = await prisma.alertPreference.findMany({
     where: { type: alert.type, channels: { has: 'email' } },
@@ -56,7 +55,7 @@ async function dispatchEmail(alert: AlertPayload): Promise<void> {
   for (const pref of prefs) {
     if (!pref.user.email) continue;
     try {
-      await sendEmail({
+      await sendEmailAlert({
         to: pref.user.email,
         subject: `Normies Alpha Alert: ${alert.type.replace(/_/g, ' ')}`,
         html: `
@@ -95,7 +94,7 @@ async function dispatchEmail(alert: AlertPayload): Promise<void> {
 
 // ── Telegram ─────────────────────────────────────────────────────────────────
 async function dispatchTelegram(alert: AlertPayload): Promise<void> {
-  if (!env.TELEGRAM_BOT_TOKEN) return;
+  if (!process.env.TELEGRAM_BOT_TOKEN) return;
 
   const prefs = await prisma.alertPreference.findMany({
     where: { type: alert.type, channels: { has: 'telegram' } },
@@ -106,7 +105,7 @@ async function dispatchTelegram(alert: AlertPayload): Promise<void> {
     if (!pref.user.telegramChatId) continue;
     try {
       await axios.post(
-        `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`,
+        `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,
         {
           chat_id: pref.user.telegramChatId,
           text: `⚡ *Normies Alpha Alert*\n\n${alert.message}\n\n_${alert.type} · ${alert.severity}_`,
@@ -121,14 +120,14 @@ async function dispatchTelegram(alert: AlertPayload): Promise<void> {
 
 // ── Discord ──────────────────────────────────────────────────────────────────
 async function dispatchDiscord(alert: AlertPayload): Promise<void> {
-  if (!env.DISCORD_WEBHOOK_URL) return;
+  if (!process.env.DISCORD_WEBHOOK_URL) return;
 
   const color =
     alert.severity === 'critical' ? 0xff4d6a :
     alert.severity === 'warning'  ? 0xffb547 : 0x5b6eff;
 
   try {
-    await axios.post(env.DISCORD_WEBHOOK_URL, {
+    await axios.post(process.env.DISCORD_WEBHOOK_URL, {
       username: 'Normies Alpha',
       embeds: [
         {

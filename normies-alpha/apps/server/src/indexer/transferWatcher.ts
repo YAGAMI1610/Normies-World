@@ -9,16 +9,15 @@
 import { erc721TransferAbi } from "@normies-alpha/contracts";
 import { publicClient } from "./chain";
 import { processTransfer } from "./transferHandler";
-import { env } from "../lib/env";
 import { redis } from "../lib/redis";
 
 export function startTransferWatcher(): () => void {
   console.log(
-    `[indexer] watching Transfer events on ${env.NORMIES_CONTRACT_ADDRESS}`
+    `[indexer] watching Transfer events on ${process.env.NORMIES_CONTRACT_ADDRESS}`
   );
 
   const unwatch = publicClient.watchContractEvent({
-    address: env.NORMIES_CONTRACT_ADDRESS as `0x${string}`,
+    address: process.env.NORMIES_CONTRACT_ADDRESS as `0x${string}`,
     abi: erc721TransferAbi,
     eventName: "Transfer",
     onLogs: async (logs) => {

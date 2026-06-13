@@ -11,12 +11,11 @@ exports.startTransferWatcher = startTransferWatcher;
 const contracts_1 = require("@normies-alpha/contracts");
 const chain_1 = require("./chain");
 const transferHandler_1 = require("./transferHandler");
-const env_1 = require("../lib/env");
 const redis_1 = require("../lib/redis");
 function startTransferWatcher() {
-    console.log(`[indexer] watching Transfer events on ${env_1.env.NORMIES_CONTRACT_ADDRESS}`);
+    console.log(`[indexer] watching Transfer events on ${process.env.NORMIES_CONTRACT_ADDRESS}`);
     const unwatch = chain_1.publicClient.watchContractEvent({
-        address: env_1.env.NORMIES_CONTRACT_ADDRESS,
+        address: process.env.NORMIES_CONTRACT_ADDRESS,
         abi: contracts_1.erc721TransferAbi,
         eventName: "Transfer",
         onLogs: async (logs) => {

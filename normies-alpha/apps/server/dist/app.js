@@ -6,6 +6,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.io = void 0;
+require("dotenv/config");
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const http_1 = require("http");
@@ -22,7 +23,6 @@ const history_1 = __importDefault(require("./routes/history"));
 const ai_1 = __importDefault(require("./routes/ai"));
 const normies_1 = __importDefault(require("./routes/normies"));
 const auth_2 = __importDefault(require("./middleware/auth"));
-const env_1 = require("./lib/env");
 const alertScheduler_1 = require("./jobs/alertScheduler");
 const whaleScoreScheduler_1 = require("./jobs/whaleScoreScheduler");
 const battleEngine_1 = require("./services/battleEngine");
@@ -30,7 +30,7 @@ const app = (0, express_1.default)();
 const httpServer = (0, http_1.createServer)(app);
 // Socket.io
 exports.io = new socket_io_1.Server(httpServer, {
-    cors: { origin: env_1.env.WEB_ORIGIN ?? '*', credentials: true },
+    cors: { origin: process.env.WEB_ORIGIN ?? '*', credentials: true },
 });
 // Bridge Redis pub/sub -> socket.io
 const subscriber = redis_1.redis.duplicate();
@@ -45,7 +45,7 @@ subscriber.connect().then(() => {
 // Register battle socket handlers
 (0, battleEngine_1.registerBattleSocket)(exports.io);
 // Middleware
-app.use((0, cors_1.default)({ origin: env_1.env.WEB_ORIGIN ?? '*', credentials: true }));
+app.use((0, cors_1.default)({ origin: process.env.WEB_ORIGIN ?? '*', credentials: true }));
 app.use(express_1.default.json());
 // Health check
 app.get('/health', (_req, res) => res.json({ ok: true, ts: Date.now() }));
@@ -63,7 +63,7 @@ app.use('/api/normies', normies_1.default);
 // Start background jobs
 (0, alertScheduler_1.startAlertScheduler)().catch(console.error);
 (0, whaleScoreScheduler_1.startWhaleScoreScheduler)().catch(console.error);
-const PORT = env_1.env.PORT ?? 4000;
+const PORT = process.env.PORT ?? 4000;
 httpServer.listen(PORT, () => {
     console.log(`[server] listening on :${PORT}`);
 });

@@ -1,6 +1,7 @@
 // apps/server/src/app.ts
 // Normies Alpha — Express + Socket.io server
 
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
@@ -17,7 +18,6 @@ import historyRouter from './routes/history';
 import aiRouter from './routes/ai';
 import normiesRouter from './routes/normies';
 import authMiddleware from './middleware/auth';
-import { env } from './lib/env';
 import { startAlertScheduler } from './jobs/alertScheduler';
 import { startWhaleScoreScheduler } from './jobs/whaleScoreScheduler';
 import { registerBattleSocket } from './services/battleEngine';
@@ -27,7 +27,7 @@ const httpServer = createServer(app);
 
 // Socket.io
 export const io = new SocketServer(httpServer, {
-  cors: { origin: env.WEB_ORIGIN ?? '*', credentials: true },
+  cors: { origin: process.env.WEB_ORIGIN ?? '*', credentials: true },
 });
 
 // Bridge Redis pub/sub -> socket.io
@@ -45,7 +45,7 @@ subscriber.connect().then(() => {
 registerBattleSocket(io);
 
 // Middleware
-app.use(cors({ origin: env.WEB_ORIGIN ?? '*', credentials: true }));
+app.use(cors({ origin: process.env.WEB_ORIGIN ?? '*', credentials: true }));
 app.use(express.json());
 
 // Health check
@@ -67,7 +67,7 @@ app.use('/api/normies',    normiesRouter);
 startAlertScheduler().catch(console.error);
 startWhaleScoreScheduler().catch(console.error);
 
-const PORT = env.PORT ?? 4000;
+const PORT = process.env.PORT ?? 4000;
 httpServer.listen(PORT, () => {
   console.log(`[server] listening on :${PORT}`);
 });

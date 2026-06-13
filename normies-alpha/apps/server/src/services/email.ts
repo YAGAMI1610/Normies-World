@@ -1,23 +1,30 @@
 // apps/server/src/services/notifications/email.ts
 import nodemailer from "nodemailer";
-import { env } from "../../lib/env";
 
 let transporter: nodemailer.Transporter | null = null;
 
 function getTransporter() {
-  if (!env.SMTP_HOST) return null;
+  if (!process.env.SMTP_HOST) return null;
   if (!transporter) {
+    const smtpPort = Number(process.env.SMTP_PORT ?? 587);
     transporter = nodemailer.createTransport({
-      host: env.SMTP_HOST,
-      port: env.SMTP_PORT,
-      secure: env.SMTP_PORT === 465,
-      auth: env.SMTP_USER ? { user: env.SMTP_USER, pass: env.SMTP_PASS } : undefined,
+      host: process.env.SMTP_HOST,
+      port: smtpPort,
+      secure: smtpPort === 465,
+      auth: process.env.SMTP_USER ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } : undefined,
     });
   }
   return transporter;
 }
 
-export async function sendEmailAlert(to: string, subject: string, body: string): Promise<boolean> {
+interface EmailPayload {
+  to: string;
+  subject: string;
+  body?: string;
+  html?: string;
+}
+
+export async function sendEmailAlert({ to, subject, body, html }: EmailPayload): Promise<boolean> {
   const t = getTransporter();
   if (!t) {
     console.warn("[email] SMTP not configured — skipping email to", to);
@@ -28,8 +35,8 @@ export async function sendEmailAlert(to: string, subject: string, body: string):
       from: `"Normies Alpha" <alerts@normies-alpha.app>`,
       to,
       subject,
-      text: body,
-      html: `<p>${body}</p>`,
+      text: body ?? html?.replace(/<[^>]*>/g, " ") ?? "",
+      html: html ?? `<p>${body ?? ""}</p>`,
     });
     return true;
   } catch (err) {

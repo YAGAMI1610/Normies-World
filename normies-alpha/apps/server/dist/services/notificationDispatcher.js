@@ -13,7 +13,6 @@ exports.dispatchAlert = dispatchAlert;
 const axios_1 = __importDefault(require("axios"));
 const prisma_1 = require("../lib/prisma");
 const email_1 = require("./email");
-const env_1 = require("../lib/env");
 // ── In-App ──────────────────────────────────────────────────────────────────
 async function dispatchInApp(alert) {
     // Find all users who have inapp subscribed for this alert type
@@ -39,7 +38,7 @@ async function dispatchInApp(alert) {
 }
 // ── Email ────────────────────────────────────────────────────────────────────
 async function dispatchEmail(alert) {
-    if (!env_1.env.SMTP_HOST)
+    if (!process.env.SMTP_HOST)
         return;
     const prefs = await prisma_1.prisma.alertPreference.findMany({
         where: { type: alert.type, channels: { has: 'email' } },
@@ -49,7 +48,7 @@ async function dispatchEmail(alert) {
         if (!pref.user.email)
             continue;
         try {
-            await (0, email_1.sendEmail)({
+            await (0, email_1.sendEmailAlert)({
                 to: pref.user.email,
                 subject: `Normies Alpha Alert: ${alert.type.replace(/_/g, ' ')}`,
                 html: `
@@ -88,7 +87,7 @@ async function dispatchEmail(alert) {
 }
 // ── Telegram ─────────────────────────────────────────────────────────────────
 async function dispatchTelegram(alert) {
-    if (!env_1.env.TELEGRAM_BOT_TOKEN)
+    if (!process.env.TELEGRAM_BOT_TOKEN)
         return;
     const prefs = await prisma_1.prisma.alertPreference.findMany({
         where: { type: alert.type, channels: { has: 'telegram' } },
@@ -98,7 +97,7 @@ async function dispatchTelegram(alert) {
         if (!pref.user.telegramChatId)
             continue;
         try {
-            await axios_1.default.post(`https://api.telegram.org/bot${env_1.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+            await axios_1.default.post(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
                 chat_id: pref.user.telegramChatId,
                 text: `⚡ *Normies Alpha Alert*\n\n${alert.message}\n\n_${alert.type} · ${alert.severity}_`,
                 parse_mode: 'Markdown',
@@ -111,12 +110,12 @@ async function dispatchTelegram(alert) {
 }
 // ── Discord ──────────────────────────────────────────────────────────────────
 async function dispatchDiscord(alert) {
-    if (!env_1.env.DISCORD_WEBHOOK_URL)
+    if (!process.env.DISCORD_WEBHOOK_URL)
         return;
     const color = alert.severity === 'critical' ? 0xff4d6a :
         alert.severity === 'warning' ? 0xffb547 : 0x5b6eff;
     try {
-        await axios_1.default.post(env_1.env.DISCORD_WEBHOOK_URL, {
+        await axios_1.default.post(process.env.DISCORD_WEBHOOK_URL, {
             username: 'Normies Alpha',
             embeds: [
                 {

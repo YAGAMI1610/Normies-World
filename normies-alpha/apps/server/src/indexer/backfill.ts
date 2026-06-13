@@ -8,7 +8,6 @@
 import { erc721TransferAbi } from "@normies-alpha/contracts";
 import { publicClient } from "./chain";
 import { processTransfer } from "./transferHandler";
-import { env } from "../lib/env";
 import { prisma } from "../lib/prisma";
 
 const CHUNK_SIZE = 5_000n;
@@ -20,7 +19,7 @@ async function getBackfillCursor(): Promise<bigint> {
     select: { blockNumber: true },
   });
   if (latest) return latest.blockNumber + 1n;
-  return env.NORMIES_DEPLOY_BLOCK;
+  return BigInt(process.env.NORMIES_DEPLOY_BLOCK ?? 0);
 }
 
 export async function runBackfill(toBlock?: bigint): Promise<void> {
@@ -33,7 +32,7 @@ export async function runBackfill(toBlock?: bigint): Promise<void> {
     const to = from + CHUNK_SIZE - 1n > head ? head : from + CHUNK_SIZE - 1n;
 
     const logs = await publicClient.getLogs({
-      address: env.NORMIES_CONTRACT_ADDRESS as `0x${string}`,
+      address: process.env.NORMIES_CONTRACT_ADDRESS as `0x${string}`,
       event: erc721TransferAbi[0],
       fromBlock: from,
       toBlock: to,

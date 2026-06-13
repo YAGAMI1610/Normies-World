@@ -8,7 +8,6 @@
 // we cache aggressively. Canvas + ownership + agent endpoints get short TTLs.
 
 import axios, { AxiosInstance } from "axios";
-import { env } from "../lib/env";
 import { cached } from "../lib/redis";
 import type {
   TraitsResponse,
@@ -29,7 +28,7 @@ import type {
   AgentBindingBatchResponse,
 } from "@normies-alpha/shared-types";
 
-const BASE = env.NORMIES_API_URL;
+const BASE = process.env.NORMIES_API_URL;
 
 const http: AxiosInstance = axios.create({
   baseURL: BASE,

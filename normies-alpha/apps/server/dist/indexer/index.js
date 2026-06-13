@@ -5,6 +5,7 @@
 // server (e.g. as its own Railway service / Docker container):
 //   npm run start:indexer
 Object.defineProperty(exports, "__esModule", { value: true });
+require("dotenv/config");
 const backfill_1 = require("./backfill");
 const transferWatcher_1 = require("./transferWatcher");
 const snapshotJob_1 = require("./snapshotJob");

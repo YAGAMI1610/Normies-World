@@ -8,12 +8,11 @@
 // alongside the generated text for audit.
 
 import OpenAI from "openai";
-import { env } from "../lib/env";
 import { prisma } from "../lib/prisma";
 import { marketDataProvider } from "./marketDataProvider";
 import type { AIInsightData } from "@normies-alpha/shared-types";
 
-const openai = env.OPENAI_API_KEY ? new OpenAI({ apiKey: env.OPENAI_API_KEY }) : null;
+const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
 
 interface MarketSnapshot {
   windowHours: number;
@@ -133,7 +132,7 @@ export async function generateDailyMarketInsight(): Promise<AIInsightData> {
 
   if (openai) {
     const completion = await openai.chat.completions.create({
-      model: env.OPENAI_MODEL,
+      model: process.env.OPENAI_MODEL,
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: JSON.stringify(snapshot) },

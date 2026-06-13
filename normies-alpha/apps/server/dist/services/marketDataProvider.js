@@ -16,15 +16,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.marketDataProvider = void 0;
 const axios_1 = __importDefault(require("axios"));
-const env_1 = require("../lib/env");
 const redis_1 = require("../lib/redis");
 const RESERVOIR_BASE = "https://api.reservoir.tools";
 class ReservoirProvider {
     constructor() {
-        this.enabled = !!env_1.env.RESERVOIR_API_KEY;
+        this.enabled = !!process.env.RESERVOIR_API_KEY;
     }
     headers() {
-        return { "x-api-key": env_1.env.RESERVOIR_API_KEY, accept: "*/*" };
+        return { "x-api-key": process.env.RESERVOIR_API_KEY, accept: "*/*" };
     }
     async getFloor() {
         if (!this.enabled)
@@ -32,7 +31,7 @@ class ReservoirProvider {
         return (0, redis_1.cached)("market:floor", 60, async () => {
             try {
                 const res = await axios_1.default.get(`${RESERVOIR_BASE}/collections/v7`, {
-                    params: { id: env_1.env.RESERVOIR_COLLECTION_ADDRESS },
+                    params: { id: process.env.RESERVOIR_COLLECTION_ADDRESS },
                     headers: this.headers(),
                     timeout: 10_000,
                 });
@@ -57,7 +56,7 @@ class ReservoirProvider {
         return (0, redis_1.cached)(`market:sales:${limit}`, 60, async () => {
             try {
                 const res = await axios_1.default.get(`${RESERVOIR_BASE}/sales/v6`, {
-                    params: { collection: env_1.env.RESERVOIR_COLLECTION_ADDRESS, limit },
+                    params: { collection: process.env.RESERVOIR_COLLECTION_ADDRESS, limit },
                     headers: this.headers(),
                     timeout: 10_000,
                 });
@@ -84,7 +83,7 @@ class ReservoirProvider {
         return (0, redis_1.cached)("market:volume24h", 300, async () => {
             try {
                 const res = await axios_1.default.get(`${RESERVOIR_BASE}/collections/v7`, {
-                    params: { id: env_1.env.RESERVOIR_COLLECTION_ADDRESS },
+                    params: { id: process.env.RESERVOIR_COLLECTION_ADDRESS },
                     headers: this.headers(),
                     timeout: 10_000,
                 });
@@ -112,6 +111,6 @@ class NullMarketDataProvider {
         return null;
     }
 }
-exports.marketDataProvider = env_1.env.RESERVOIR_API_KEY
+exports.marketDataProvider = process.env.RESERVOIR_API_KEY
     ? new ReservoirProvider()
     : new NullMarketDataProvider();

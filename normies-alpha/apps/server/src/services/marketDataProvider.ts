@@ -11,7 +11,6 @@
 // gracefully and are labeled as "unavailable" in the UI.
 
 import axios from "axios";
-import { env } from "../lib/env";
 import { cached } from "../lib/redis";
 
 export interface FloorSnapshot {
@@ -38,10 +37,10 @@ export interface MarketDataProvider {
 const RESERVOIR_BASE = "https://api.reservoir.tools";
 
 class ReservoirProvider implements MarketDataProvider {
-  private enabled = !!env.RESERVOIR_API_KEY;
+  private enabled = !!process.env.RESERVOIR_API_KEY;
 
   private headers() {
-    return { "x-api-key": env.RESERVOIR_API_KEY, accept: "*/*" };
+    return { "x-api-key": process.env.RESERVOIR_API_KEY, accept: "*/*" };
   }
 
   async getFloor(): Promise<FloorSnapshot | null> {
@@ -51,7 +50,7 @@ class ReservoirProvider implements MarketDataProvider {
         const res = await axios.get(
           `${RESERVOIR_BASE}/collections/v7`,
           {
-            params: { id: env.RESERVOIR_COLLECTION_ADDRESS },
+            params: { id: process.env.RESERVOIR_COLLECTION_ADDRESS },
             headers: this.headers(),
             timeout: 10_000,
           }
@@ -75,7 +74,7 @@ class ReservoirProvider implements MarketDataProvider {
     return cached(`market:sales:${limit}`, 60, async () => {
       try {
         const res = await axios.get(`${RESERVOIR_BASE}/sales/v6`, {
-          params: { collection: env.RESERVOIR_COLLECTION_ADDRESS, limit },
+          params: { collection: process.env.RESERVOIR_COLLECTION_ADDRESS, limit },
           headers: this.headers(),
           timeout: 10_000,
         });
@@ -103,7 +102,7 @@ class ReservoirProvider implements MarketDataProvider {
         const res = await axios.get(
           `${RESERVOIR_BASE}/collections/v7`,
           {
-            params: { id: env.RESERVOIR_COLLECTION_ADDRESS },
+            params: { id: process.env.RESERVOIR_COLLECTION_ADDRESS },
             headers: this.headers(),
             timeout: 10_000,
           }
@@ -133,6 +132,6 @@ class NullMarketDataProvider implements MarketDataProvider {
   }
 }
 
-export const marketDataProvider: MarketDataProvider = env.RESERVOIR_API_KEY
+export const marketDataProvider: MarketDataProvider = process.env.RESERVOIR_API_KEY
   ? new ReservoirProvider()
   : new NullMarketDataProvider();

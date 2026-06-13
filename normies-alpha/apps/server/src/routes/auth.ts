@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { env } from '../lib/env';
 
 export interface AuthRequest extends Request {
   userId?: string;
@@ -12,7 +11,7 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
   if (!token) return res.status(401).json({ error: 'Unauthorized' });
 
   try {
-    const payload = jwt.verify(token, env.JWT_SECRET) as { userId: string; whaleAddress: string };
+    const payload = jwt.verify(token, process.env.JWT_SECRET as string) as { userId: string; whaleAddress: string };
     req.userId = payload.userId;
     req.whaleAddress = payload.whaleAddress;
     next();
@@ -25,7 +24,7 @@ export function optionalAuth(req: AuthRequest, _res: Response, next: NextFunctio
   const token = req.headers.authorization?.replace('Bearer ', '');
   if (token) {
     try {
-      const payload = jwt.verify(token, env.JWT_SECRET) as { userId: string; whaleAddress: string };
+      const payload = jwt.verify(token, process.env.JWT_SECRET as string) as { userId: string; whaleAddress: string };
       req.userId = payload.userId;
       req.whaleAddress = payload.whaleAddress;
     } catch { /* ignore */ }

@@ -7,8 +7,7 @@ exports.redis = void 0;
 exports.cached = cached;
 // apps/server/src/lib/redis.ts
 const ioredis_1 = __importDefault(require("ioredis"));
-const env_1 = require("./env");
-exports.redis = new ioredis_1.default(env_1.env.REDIS_URL, {
+exports.redis = new ioredis_1.default(process.env.REDIS_URL ?? "redis://localhost:6379", {
     maxRetriesPerRequest: 3,
     lazyConnect: false,
 });
