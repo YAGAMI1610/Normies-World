@@ -51,6 +51,11 @@ app.use(express.json());
 // Health check
 app.get('/health', (_req, res) => res.json({ ok: true, ts: Date.now() }));
 
+// Root route
+app.get('/', (_req, res) => {
+  res.json({ status: 'Normies-World API is live', timestamp: Date.now() });
+});
+
 // Routes
 app.use('/api/auth',       authRouter);
 app.use('/api/dashboard',  dashboardRouter);
