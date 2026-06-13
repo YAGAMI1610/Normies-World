@@ -1,5 +1,7 @@
-import { Request, Response, NextFunction } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+
+const router = Router();
 
 export interface AuthRequest extends Request {
   userId?: string;
@@ -31,3 +33,5 @@ export function optionalAuth(req: AuthRequest, _res: Response, next: NextFunctio
   }
   next();
 }
+
+export default router;

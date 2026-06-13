@@ -5,7 +5,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.authMiddleware = authMiddleware;
 exports.optionalAuth = optionalAuth;
+const express_1 = require("express");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const router = (0, express_1.Router)();
 function authMiddleware(req, res, next) {
     const token = req.headers.authorization?.replace('Bearer ', '');
     if (!token)
@@ -32,3 +34,4 @@ function optionalAuth(req, _res, next) {
     }
     next();
 }
+exports.default = router;

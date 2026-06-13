@@ -3,3 +3,4 @@ normies-alpha/apps/*/node_modules/
 normies-alpha/packages/*/node_modules/
 normies-alpha/**/node_modules
 normies-alpha/**/.next
+node_modules

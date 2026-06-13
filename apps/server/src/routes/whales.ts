@@ -1,7 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { cached } from '../lib/redis';
-import authMiddleware, optionalAuth, type AuthRequest } from '../middleware/auth';
+import authMiddleware, { optionalAuth } from '../middleware/auth';
+import type { AuthRequest } from '../middleware/auth';
 
 const router = Router();
 router.use(optionalAuth);

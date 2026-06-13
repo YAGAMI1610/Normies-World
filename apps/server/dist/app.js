@@ -63,7 +63,7 @@ app.use('/api/normies', normies_1.default);
 // Start background jobs
 (0, alertScheduler_1.startAlertScheduler)().catch(console.error);
 (0, whaleScoreScheduler_1.startWhaleScoreScheduler)().catch(console.error);
-const PORT = process.env.PORT ?? 4000;
-httpServer.listen(PORT, () => {
+const PORT = Number(process.env.PORT) || 3000;
+httpServer.listen(PORT, '0.0.0.0', () => {
     console.log(`[server] listening on :${PORT}`);
 });

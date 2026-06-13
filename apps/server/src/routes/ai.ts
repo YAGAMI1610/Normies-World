@@ -2,7 +2,7 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { generateDailyMarketInsight, getLatestInsight } from '../services/aiInsightEngine';
-import authMiddleware } from '../middleware/auth';
+import authMiddleware from '../middleware/auth';
 
 const router = Router();
 

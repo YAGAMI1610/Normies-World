@@ -67,7 +67,7 @@ app.use('/api/normies',    normiesRouter);
 startAlertScheduler().catch(console.error);
 startWhaleScoreScheduler().catch(console.error);
 
-const PORT = process.env.PORT ?? 4000;
-httpServer.listen(PORT, () => {
+const PORT = Number(process.env.PORT) || 3000;
+httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`[server] listening on :${PORT}`);
 });

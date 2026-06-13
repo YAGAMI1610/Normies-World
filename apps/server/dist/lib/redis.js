@@ -7,13 +7,17 @@ exports.redis = void 0;
 exports.cached = cached;
 // apps/server/src/lib/redis.ts
 const ioredis_1 = __importDefault(require("ioredis"));
-exports.redis = new ioredis_1.default(process.env.REDIS_URL ?? "redis://localhost:6379", {
+const redisUrl = process.env.REDIS_URL ?? "redis://localhost:6379";
+exports.redis = new ioredis_1.default(redisUrl, {
     maxRetriesPerRequest: 3,
-    lazyConnect: false,
+    lazyConnect: true,
 });
 exports.redis.on("error", (err) => {
     // eslint-disable-next-line no-console
     console.error("[redis] connection error:", err.message);
+});
+exports.redis.connect().catch(() => {
+    // ignore local redis startup failures so the app can still boot
 });
 /**
  * Cache-aside helper. Fetches `fn()` and caches the JSON result under `key`
