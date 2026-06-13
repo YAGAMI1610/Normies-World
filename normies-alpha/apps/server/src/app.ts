@@ -17,7 +17,7 @@ import marketRouter from './routes/market';
 import historyRouter from './routes/history';
 import aiRouter from './routes/ai';
 import normiesRouter from './routes/normies';
-import authMiddleware from './middleware/auth';
+import { authMiddleware } from './middleware/auth';
 import { startAlertScheduler } from './jobs/alertScheduler';
 import { startWhaleScoreScheduler } from './jobs/whaleScoreScheduler';
 import { registerBattleSocket } from './services/battleEngine';
