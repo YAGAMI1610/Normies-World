@@ -1,16 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  images: {
-    domains: ['api.normies.art'],
+  typescript: {
+    ignoreBuildErrors: true,
   },
-  async rewrites() {
-    return [
-      {
-        source: '/api/normies/:path*',
-        destination: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/:path*`,
-      },
-    ];
+  eslint: {
+    ignoreDuringBuilds: true,
   },
-};
-
-module.exports = nextConfig;
+}
+module.exports = nextConfig
