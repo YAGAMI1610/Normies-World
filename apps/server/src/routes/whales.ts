@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma';
 import { cached } from '../lib/redis';
 import authMiddleware, { optionalAuth } from '../middleware/auth';
 import type { AuthRequest } from '../middleware/auth';
+import { analyzeRealWhales } from '../services/realWhaleAnalyzer';
 
 const router = Router();
 router.use(optionalAuth);
@@ -12,25 +13,7 @@ router.get('/', async (req: AuthRequest, res: Response) => {
   try {
     const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
     
-    const data = await cached(`whales:list:${limit}`, 60, async () => {
-      const wallets = await prisma.wallet.findMany({
-        where: { isWhale: true },
-        orderBy: { whaleScore: 'desc' },
-        take: limit,
-        include: {
-          ownerships: { where: { current: true } },
-        },
-      });
-
-      return wallets.map(w => ({
-        address: w.address,
-        whaleScore: w.whaleScore ?? 0,
-        holdingsCount: w.ownerships.length,
-        avgHoldDurationDays: calculateAvgHold(w.ownerships),
-        rarityTier: getRarityTier(w.ownerships),
-        followed: false, // populated per-user below
-      }));
-    });
+    const data = await analyzeRealWhales(limit);
 
     // Personalize follow status if authenticated
     if (req.userId) {
@@ -39,7 +22,7 @@ router.get('/', async (req: AuthRequest, res: Response) => {
         select: { whaleAddress: true },
       });
       const followedSet = new Set(follows.map(f => f.whaleAddress));
-      return res.json(data.map((w: any) => ({ ...w, followed: followedSet.has(w.address) })));
+      return res.json(data.map(w => ({ ...w, followed: followedSet.has(w.address) })));
     }
 
     res.json(data);
