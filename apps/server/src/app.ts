@@ -50,14 +50,17 @@ app.use(express.json());
 // Health check
 app.get('/health', (_req, res) => res.json({ ok: true, ts: Date.now() }));
 
-const frontendRoot = path.join(__dirname, '../../web/.next');
-const frontendPublicRoot = path.join(__dirname, '../../web/public');
-const frontendIndexPath = path.join(frontendRoot, 'server', 'app', 'index.html');
+// Serve Next.js exported static files
+const webExportRoot = path.join(__dirname, '../../web/out');
+const webPublicRoot = path.join(__dirname, '../../web/public');
 
-if (existsSync(frontendPublicRoot)) {
-  app.use(express.static(frontendPublicRoot));
+if (existsSync(webPublicRoot)) {
+  app.use(express.static(webPublicRoot));
 }
-app.use('/_next', express.static(frontendRoot));
+
+if (existsSync(webExportRoot)) {
+  app.use(express.static(webExportRoot, { maxAge: '1h' }));
+}
 
 // Routes
 app.use('/api/auth',       authRouter);
@@ -72,15 +75,17 @@ app.use('/api/normies',    normiesRouter);
 
 // Root route and fallback
 app.get('*', (req, res) => {
-  if (req.path.startsWith('/api') || req.path.startsWith('/_next')) {
+  if (req.path.startsWith('/api')) {
     return res.status(404).json({ status: 'Not found' });
   }
 
-  if (existsSync(frontendIndexPath)) {
-    return res.sendFile(frontendIndexPath);
+  // Try to serve index.html for client-side routing
+  const indexPath = path.join(webExportRoot, 'index.html');
+  if (existsSync(indexPath)) {
+    return res.sendFile(indexPath);
   }
 
-  res.json({ status: 'Normies-World API is live', timestamp: Date.now() });
+  res.status(404).json({ status: 'Frontend not available', message: 'Build the frontend with "npm run build --workspace=apps/web"' });
 });
 
 // Start background jobs
