@@ -1,10 +1,10 @@
 'use client';
 
-import { useAccount } from 'wagmi';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Fish, GitCompare, TrendingUp } from 'lucide-react';
 import { whaleApi } from '@/lib/api';
+import { useAuthStore } from '@/lib/stores/authStore';
 
 function SimilarityMeter({ score }: { score: number }) {
   const color =
@@ -40,7 +40,7 @@ function shortenAddress(addr: string) {
 }
 
 export function WhaleSimilarity() {
-  const { address } = useAccount();
+  const address = useAuthStore((state) => state.walletAddress);
 
   const { data, isLoading } = useQuery({
     queryKey: ['whale-similarity', address],

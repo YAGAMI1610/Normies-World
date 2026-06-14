@@ -5,6 +5,7 @@
 
 import { normiesApi } from './normiesApiClient';
 import { cached } from '../lib/redis';
+import { prisma } from '../lib/prisma';
 
 export interface RealWhale {
   address: string;
@@ -82,12 +83,53 @@ export async function analyzeRealWhales(limit: number = 20): Promise<RealWhale[]
         })
       );
 
+      if (whaleArray.length === 0) {
+        const dbWhales = await prisma.whale.findMany({
+          orderBy: { whaleScore: 'desc' },
+          take: limit,
+        });
+
+        if (dbWhales.length > 0) {
+          return dbWhales.map((w) => ({
+            address: w.walletAddress,
+            whaleScore: w.whaleScore,
+            holdingsCount: w.holdingsCount,
+            avgHoldDurationDays: w.avgHoldDurationDays,
+            rarityTier:
+              w.whaleScore >= 85 ? 'LEGENDARY' :
+              w.whaleScore >= 70 ? 'EPIC' :
+              'RARE',
+            followed: false,
+          }));
+        }
+      }
+
       // Sort by whale score and return top N
       return whaleArray
         .sort((a, b) => b.whaleScore - a.whaleScore)
         .slice(0, limit);
     } catch (err) {
       console.error('[realWhaleAnalyzer] Failed to analyze whales:', err);
+
+      const dbWhales = await prisma.whale.findMany({
+        orderBy: { whaleScore: 'desc' },
+        take: limit,
+      });
+
+      if (dbWhales.length > 0) {
+        return dbWhales.map((w) => ({
+          address: w.walletAddress,
+          whaleScore: w.whaleScore,
+          holdingsCount: w.holdingsCount,
+          avgHoldDurationDays: w.avgHoldDurationDays,
+          rarityTier:
+            w.whaleScore >= 85 ? 'LEGENDARY' :
+            w.whaleScore >= 70 ? 'EPIC' :
+            'RARE',
+          followed: false,
+        }));
+      }
+
       return [];
     }
   });

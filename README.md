@@ -67,7 +67,7 @@ Edit `apps/server/.env`:
 - Set `OPENAI_API_KEY` (optional — has mock fallback)
 
 Edit `apps/web/.env`:
-- Set `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` (get from [cloud.walletconnect.com](https://cloud.walletconnect.com))
+- No WalletConnect project ID is required for browser wallet sign-in.
 
 ### 4. Migrate database
 ```bash
@@ -174,7 +174,6 @@ See `apps/server/.env.example` and `apps/web/.env.example` for the full list.
 **Required to run locally:**
 - `DATABASE_URL`
 - `REDIS_URL`
-- `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID`
 
 **Required for full features:**
 - `RPC_URL` — blockchain indexer + ownership verification

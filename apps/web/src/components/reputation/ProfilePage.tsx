@@ -1,13 +1,13 @@
 'use client';
 
-import { useAccount } from 'wagmi';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { User, Shield, Star, Zap, Trophy, Wallet } from 'lucide-react';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { reputationApi, battleApi, type ReputationEntry, type BattleLeaderEntry } from '@/lib/api';
 import { BattleCard } from '@/components/battle/BattleCard';
 import { NormieGallery } from '@/components/dashboard/NormieGallery';
+import { useAuthStore } from '@/lib/stores/authStore';
+import { useSiweAuth } from '@/hooks/useSiweAuth';
 
 const BADGE_CONFIG: Record<string, { label: string; emoji: string; color: string; description: string }> = {
   ALPHA_COLLECTOR: { label: 'Alpha Collector', emoji: '⚡', color: 'bg-alpha/10 border-alpha/30 text-alpha', description: 'Acquired 10+ high-rarity Normies' },
@@ -48,7 +48,8 @@ function shortenAddress(addr: string) {
 }
 
 export default function ProfilePage() {
-  const { address, isConnected } = useAccount();
+  const { walletAddress: address, signIn, isLoading } = useSiweAuth();
+  const isConnected = Boolean(address);
 
   const { data: reputation } = useQuery({
     queryKey: ['my-reputation', address],
@@ -78,7 +79,13 @@ export default function ProfilePage() {
         <p className="text-sm text-ink max-w-sm text-center">
           Connect a wallet holding Normies NFTs to view your reputation, badges, and battle statistics.
         </p>
-        <ConnectButton />
+        <button
+          onClick={signIn}
+          disabled={isLoading}
+          className="px-5 py-2 rounded-lg bg-alpha text-white text-sm hover:bg-alpha/90 transition-colors disabled:opacity-50"
+        >
+          {isLoading ? 'Connecting…' : 'Connect Wallet'}
+        </button>
       </div>
     );
   }

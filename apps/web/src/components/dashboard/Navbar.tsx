@@ -1,13 +1,18 @@
 'use client';
 
-import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { motion } from 'framer-motion';
 import { Bell, Zap, Fish, Clock, User, LayoutDashboard } from 'lucide-react';
 import { useAlertStore } from '@/lib/stores/alertStore';
+import { useSiweAuth } from '@/hooks/useSiweAuth';
+import { useAuthStore } from '@/lib/stores/authStore';
 
 interface NavbarProps {
   activeTab: string;
   setActiveTab: (tab: any) => void;
+}
+
+function shortenAddress(addr: string) {
+  return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
 }
 
 const tabs = [
@@ -19,6 +24,7 @@ const tabs = [
 
 export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
   const { unreadCount, markAllRead } = useAlertStore();
+  const { walletAddress, signIn, logout, isLoading } = useSiweAuth();
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-void/80 backdrop-blur-xl">
@@ -76,11 +82,27 @@ export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
             )}
           </button>
 
-          <ConnectButton
-            accountStatus="avatar"
-            chainStatus="none"
-            showBalance={false}
-          />
+          {walletAddress ? (
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1 rounded-full bg-surface text-xs font-mono text-white">
+                {shortenAddress(walletAddress)}
+              </span>
+              <button
+                onClick={logout}
+                className="px-3 py-1 rounded-lg border border-border text-xs text-ink hover:text-white"
+              >
+                Disconnect
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={signIn}
+              disabled={isLoading}
+              className="px-3 py-2 rounded-lg bg-alpha text-white text-sm hover:bg-alpha/90 transition-colors disabled:opacity-50"
+            >
+              {isLoading ? 'Connecting…' : 'Connect Wallet'}
+            </button>
+          )}
         </div>
       </div>
 

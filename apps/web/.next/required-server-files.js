@@ -96,6 +96,7 @@ self.__SERVER_FILES_MANIFEST={
     "compiler": {},
     "expireTime": 31536000,
     "staticPageGenerationTimeout": 60,
+    "output": "export",
     "modularizeImports": {
       "@mui/icons-material": {
         "transform": "@mui/icons-material/{{member}}"
@@ -309,7 +310,7 @@ self.__SERVER_FILES_MANIFEST={
     "turbopack": {
       "root": "/workspaces/Normies-World"
     },
-    "distDirRoot": ".next"
+    "distDirRoot": "out"
   },
   "appDir": "/workspaces/Normies-World/apps/web",
   "relativeAppDir": "apps/web",

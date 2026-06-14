@@ -42,7 +42,7 @@ router.get('/stats', async (_req: Request, res: Response) => {
       }
 
       return {
-        floorPriceEth: floor?.floorPriceEth ?? null,
+        floorEth: floor?.floorPriceEth ?? null,
         floorChange24h,
         volume24hEth: volume24h,
         uniqueHolders,
