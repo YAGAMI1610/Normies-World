@@ -4,8 +4,16 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Fish, TrendingUp, Clock, Layers, Search } from 'lucide-react';
-import { whaleApi, type WhaleEntry } from '@/lib/api';
+import { normiesApi, whaleApi, type WhaleEntry } from '@/lib/api';
 import { WhaleSimilarity } from './WhaleSimilarity';
+
+function normalizeAddress(address: string): string {
+  return address.trim().toLowerCase();
+}
+
+function isValidAddress(address: string): boolean {
+  return /^0x[a-fA-F0-9]{40}$/.test(address);
+}
 
 function shortenAddress(addr: string) {
   return `${addr.slice(0, 8)}…${addr.slice(-6)}`;
@@ -103,6 +111,9 @@ function WhaleCard({ whale, rank }: { whale: WhaleEntry; rank: number }) {
 
 export default function WhalePage() {
   const [search, setSearch] = useState('');
+  const [lookupAddress, setLookupAddress] = useState('');
+  const [queryAddress, setQueryAddress] = useState('');
+  const [lookupError, setLookupError] = useState<string | null>(null);
 
   const { data: whales = [], isLoading } = useQuery({
     queryKey: ['whales-all'],
@@ -110,13 +121,30 @@ export default function WhalePage() {
     refetchInterval: 60_000,
   });
 
+  const holderQuery = useQuery({
+    queryKey: ['holder-tokens', queryAddress],
+    queryFn: () => normiesApi.getHolderTokens(queryAddress),
+    enabled: !!queryAddress,
+    staleTime: 60_000,
+  });
+
   const filtered = whales.filter(w =>
     !search || w.address.toLowerCase().includes(search.toLowerCase())
   );
 
+  const handleLookup = () => {
+    const normalized = normalizeAddress(lookupAddress);
+    if (!isValidAddress(normalized)) {
+      setLookupError('Please enter a valid Ethereum address.');
+      return;
+    }
+    setLookupError(null);
+    setQueryAddress(normalized);
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-2xl font-display font-800 text-white flex items-center gap-2">
             <Fish className="w-6 h-6 text-whale" />
@@ -124,16 +152,88 @@ export default function WhalePage() {
           </h1>
           <p className="text-sm text-ink mt-1">Track smart money — accumulation, holdings, and behavior patterns.</p>
         </div>
-        <div className="relative">
+        <div className="relative w-full lg:w-80">
           <Search className="w-4 h-4 text-ink absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Search address…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="pl-9 pr-4 py-2 bg-surface border border-border rounded-lg text-sm text-white placeholder-ink focus:outline-none focus:border-alpha font-mono w-56"
+            placeholder="Search holder address…"
+            value={lookupAddress}
+            onChange={e => setLookupAddress(e.target.value)}
+            className="pl-9 pr-4 py-2 bg-surface border border-border rounded-lg text-sm text-white placeholder-ink focus:outline-none focus:border-alpha font-mono w-full"
+            onKeyDown={(e) => { if (e.key === 'Enter') handleLookup(); }}
           />
+          <button
+            onClick={handleLookup}
+            className="absolute right-1 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-alpha text-white rounded-lg text-xs font-medium hover:bg-alpha/90 transition-colors"
+          >
+            Lookup
+          </button>
         </div>
+      </div>
+
+      <div className="bg-surface rounded-xl ring-1 ring-border p-6">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
+          <div>
+            <p className="text-sm font-display font-600 text-white">Holder Search</p>
+            <p className="text-xs text-ink">Query the Normies API directly for owned token IDs and artwork.</p>
+          </div>
+          {queryAddress && (
+            <p className="text-xs text-ink">Showing holdings for {shortenAddress(queryAddress)}</p>
+          )}
+        </div>
+
+        {lookupError && <p className="text-sm text-danger mb-4">{lookupError}</p>}
+
+        {!queryAddress ? (
+          <p className="text-sm text-ink">Enter a wallet address above and click Lookup to display direct Normies holdings.</p>
+        ) : holderQuery.isLoading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {Array(8).fill(0).map((_, i) => (
+              <div key={i} className="aspect-square bg-muted/30 rounded-xl animate-pulse" />
+            ))}
+          </div>
+        ) : holderQuery.isError ? (
+          <p className="text-sm text-danger">Unable to load holdings for this address.</p>
+        ) : holderQuery.data?.tokenIds.length ? (
+          <div className="space-y-4">
+            <p className="text-xs text-ink">{holderQuery.data.tokenIds.length} Normie{holderQuery.data.tokenIds.length === 1 ? '' : 's'} found.</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {holderQuery.data.tokenIds.map((tokenId) => {
+                const id = Number(tokenId);
+                return (
+                  <motion.div
+                    key={tokenId}
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-void/40 rounded-xl overflow-hidden border border-border"
+                  >
+                    <div className="aspect-square bg-muted/20">
+                      <img
+                        src={normiesApi.imagePngUrl(id)}
+                        alt={`Normie #${tokenId}`}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                    <div className="p-3">
+                      <p className="text-xs font-mono text-white">#{tokenId}</p>
+                      <a
+                        href={`https://api.normies.art/normie/${tokenId}/image.png`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[10px] text-alpha hover:underline"
+                      >
+                        View image
+                      </a>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-ink">No Normies found for this wallet address.</p>
+        )}
       </div>
 
       {/* Summary stats */}

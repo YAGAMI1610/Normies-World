@@ -2,11 +2,17 @@
 import axios from 'axios';
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+const NORMIES_BASE = 'https://api.normies.art';
 
 export const api = axios.create({
   baseURL: `${BASE}/api`,
   timeout: 15_000,
   withCredentials: true,
+});
+
+const normiesExternalApi = axios.create({
+  baseURL: NORMIES_BASE,
+  timeout: 15_000,
 });
 
 // Auth token interceptor
@@ -19,16 +25,6 @@ api.interceptors.request.use((config) => {
 });
 
 // ---- Typed API helpers ----
-
-export interface DashboardStats {
-  floorEth: number | null;
-  floorChange24h: number | null;
-  volume24hEth: number | null;
-  uniqueHolders: number;
-  activeWhales: number;
-  totalTransfers24h: number;
-  topAlert: string | null;
-}
 
 export interface Alert {
   id: string;
@@ -83,6 +79,25 @@ export interface NormieCard {
   owned: boolean;
 }
 
+export interface NormiesHolderResponse {
+  address: string;
+  tokenIds: string[];
+}
+
+export interface NormieVersion {
+  version?: number | string;
+  createdAt?: string;
+  txHash?: string;
+  [key: string]: unknown;
+}
+
+export interface CanvasStats {
+  totalBurnCommitments: number;
+  totalBurnedTokens: number;
+  totalTransforms: number;
+  totalActionPointsDistributed: string;
+}
+
 export interface AIInsight {
   id: string;
   summary: string;
@@ -105,7 +120,7 @@ export interface HistoricalSnapshot {
 // --- Endpoints ---
 
 export const dashboardApi = {
-  getStats: () => api.get<DashboardStats>('/dashboard/stats').then(r => r.data),
+  getStats: () => normiesExternalApi.get<CanvasStats>('/history/stats').then(r => r.data),
   getAlerts: (limit = 20) => api.get<Alert[]>('/alerts', { params: { limit } }).then(r => r.data),
   getFloorHistory: (days = 30) => api.get<{ date: string; floor: number }[]>('/market/floor-history', { params: { days } }).then(r => r.data),
   getTraitDemand: () => api.get<{ category: string; value: string; count: number; pctChange: number }[]>('/market/trait-demand').then(r => r.data),
@@ -148,10 +163,13 @@ export const authApi = {
 };
 
 export const normiesApi = {
+  imagePngUrl: (tokenId: number) => `${NORMIES_BASE}/normie/${tokenId}/image.png`,
   getToken: (tokenId: number) => api.get<any>(`/normies/${tokenId}`).then(r => r.data),
   getHoldings: (address: string) => api.get<{ tokenId: number; imageUrl: string; rarityRank: number | null; rarityScore: number | null }[]>(`/normies/holders/${address}`).then(r => r.data),
   getAgent: (tokenId: number) => api.get<any>(`/normies/${tokenId}/agent`).then(r => r.data),
   getAgents: (limit = 20) => api.get<any>(`/normies/agents/list`, { params: { limit } }).then(r => r.data),
   getCanvasStatus: () => api.get<any>('/normies/canvas/status').then(r => r.data),
-  getGlobalStats: () => api.get<any>('/normies/history/stats').then(r => r.data),
+  getGlobalStats: () => normiesExternalApi.get<CanvasStats>('/history/stats').then(r => r.data),
+  getHolderTokens: (address: string) => normiesExternalApi.get<NormiesHolderResponse>(`/holders/${address}`).then(r => r.data),
+  getNormieVersions: (tokenId: number) => normiesExternalApi.get<NormieVersion[]>(`/history/normie/${tokenId}/versions`).then(r => r.data),
 };

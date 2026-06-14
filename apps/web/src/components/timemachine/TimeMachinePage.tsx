@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, Calendar, Users, ArrowRight, Fish, Tag } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { timeMachineApi, type HistoricalSnapshot } from '@/lib/api';
+import { timeMachineApi, type HistoricalSnapshot, normiesApi, type NormieVersion } from '@/lib/api';
 
 const PRESET_DATES = [
   { label: '7 days ago',  date: format(subDays(new Date(), 7),  'yyyy-MM-dd') },
@@ -22,6 +22,9 @@ function shortenAddress(addr: string) {
 export default function TimeMachinePage() {
   const [selectedDate, setSelectedDate] = useState('');
   const [inputDate, setInputDate] = useState('');
+  const [tokenInput, setTokenInput] = useState('');
+  const [lookupTokenId, setLookupTokenId] = useState<number | null>(null);
+  const [tokenError, setTokenError] = useState<string | null>(null);
 
   const { data: snapshot, isLoading, isError } = useQuery({
     queryKey: ['snapshot', selectedDate],
@@ -29,8 +32,29 @@ export default function TimeMachinePage() {
     enabled: !!selectedDate,
   });
 
+  const {
+    data: versions,
+    isLoading: isVersionsLoading,
+    isError: isVersionsError,
+  } = useQuery<NormieVersion[]>({
+    queryKey: ['normie-versions', lookupTokenId],
+    queryFn: () => normiesApi.getNormieVersions(lookupTokenId!),
+    enabled: lookupTokenId !== null,
+    staleTime: 60_000,
+  });
+
   const handleDateSubmit = () => {
     if (inputDate) setSelectedDate(inputDate);
+  };
+
+  const handleTokenLookup = () => {
+    const tokenId = Number(tokenInput);
+    if (!Number.isInteger(tokenId) || tokenId < 0 || tokenId > 9999) {
+      setTokenError('Please enter a valid Normie ID between 0 and 9999.');
+      return;
+    }
+    setTokenError(null);
+    setLookupTokenId(tokenId);
   };
 
   return (
@@ -193,6 +217,77 @@ export default function TimeMachinePage() {
           </motion.div>
         ) : null}
       </AnimatePresence>
+
+      <div className="bg-surface rounded-xl ring-1 ring-border p-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between mb-4">
+          <div>
+            <h2 className="text-sm font-display font-600 text-white">Normie Version History</h2>
+            <p className="text-xs text-ink mt-1">Load the full /history/normie/{'{id}'}/versions history from the Normies API.</p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <input
+              type="number"
+              placeholder="Normie ID"
+              value={tokenInput}
+              onChange={(e) => setTokenInput(e.target.value)}
+              className="flex-1 bg-void border border-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-alpha font-mono"
+              onKeyDown={(e) => { if (e.key === 'Enter') handleTokenLookup(); }}
+              min={0}
+              max={9999}
+            />
+            <button
+              onClick={handleTokenLookup}
+              className="px-4 py-2 bg-alpha hover:bg-alpha/80 text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              Load History
+            </button>
+          </div>
+        </div>
+
+        {tokenError && <p className="text-xs text-danger mb-4">{tokenError}</p>}
+
+        {lookupTokenId === null ? (
+          <p className="text-sm text-ink">Enter a Normie token ID above to view the full history of its canvas versions.</p>
+        ) : isVersionsLoading ? (
+          <div className="space-y-3">
+            {Array(3).fill(0).map((_, i) => (
+              <div key={i} className="h-24 bg-muted/30 rounded-xl animate-pulse" />
+            ))}
+          </div>
+        ) : isVersionsError ? (
+          <p className="text-sm text-danger">Unable to load version history for Normie #{lookupTokenId}.</p>
+        ) : versions && versions.length === 0 ? (
+          <p className="text-sm text-ink">No version history found for Normie #{lookupTokenId}.</p>
+        ) : (
+          <div className="space-y-4">
+            {versions?.map((version, index) => (
+              <div key={index} className="bg-void/30 border border-border rounded-xl p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-display font-700 text-white">Version {version.version ?? index + 1}</p>
+                    {version.createdAt && (
+                      <p className="text-xs text-ink">{format(new Date(version.createdAt), 'PP p')}</p>
+                    )}
+                  </div>
+                  {version.txHash && (
+                    <a
+                      href={`https://etherscan.io/tx/${version.txHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-alpha hover:underline"
+                    >
+                      View transaction
+                    </a>
+                  )}
+                </div>
+                <pre className="mt-3 text-[11px] text-ink whitespace-pre-wrap break-words bg-void p-3 rounded-lg">
+{JSON.stringify(version, null, 2)}
+                </pre>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

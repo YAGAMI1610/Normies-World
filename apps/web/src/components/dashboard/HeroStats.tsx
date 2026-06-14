@@ -64,75 +64,46 @@ export function HeroStats() {
     refetchInterval: 30_000,
   });
 
-  const formatEth = (v: number | null | undefined) =>
-    v == null ? '—' : `${v.toFixed(3)} Ξ`;
-
-  const formatPct = (v: number | null | undefined) =>
-    v == null ? '' : `${v > 0 ? '+' : ''}${v.toFixed(1)}% 24h`;
-
-  const floorTrend = stats?.floorChange24h == null ? 'neutral'
-    : stats.floorChange24h > 0 ? 'up' : 'down';
+  const formatNumber = (value: number | string | null | undefined) =>
+    value == null ? '—' : typeof value === 'string' ? value : value.toLocaleString();
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-      <div className="col-span-2 md:col-span-3 lg:col-span-1">
-        <StatCard
-          label="Floor Price"
-          value={isLoading ? '...' : formatEth(stats?.floorEth)}
-          subValue={isLoading ? '' : formatPct(stats?.floorChange24h)}
-          icon={Activity}
-          accent="alpha"
-          trend={floorTrend}
-          delay={0}
-        />
-      </div>
-      <div className="col-span-2 md:col-span-1 lg:col-span-1">
-        <StatCard
-          label="24h Volume"
-          value={isLoading ? '...' : formatEth(stats?.volume24hEth)}
-          icon={TrendingUp}
-          accent="pulse"
-          delay={0.05}
-        />
-      </div>
-      <div className="col-span-1 lg:col-span-1">
-        <StatCard
-          label="Holders"
-          value={isLoading ? '...' : (stats?.uniqueHolders?.toLocaleString() ?? '—')}
-          icon={Users}
-          accent="amber"
-          delay={0.1}
-        />
-      </div>
-      <div className="col-span-1 lg:col-span-1">
-        <StatCard
-          label="Active Whales"
-          value={isLoading ? '...' : (stats?.activeWhales?.toString() ?? '—')}
-          subValue="last 24h"
-          icon={Fish}
-          accent="whale"
-          delay={0.15}
-        />
-      </div>
-      <div className="col-span-1 lg:col-span-1">
-        <StatCard
-          label="Transfers 24h"
-          value={isLoading ? '...' : (stats?.totalTransfers24h?.toLocaleString() ?? '—')}
-          icon={Zap}
-          accent="alpha"
-          delay={0.2}
-        />
-      </div>
-      <div className="col-span-1 lg:col-span-1">
-        <StatCard
-          label="Top Alert"
-          value={isLoading ? '...' : (stats?.topAlert ? '🚨 Active' : '✓ Quiet')}
-          subValue={stats?.topAlert ?? undefined}
-          icon={Activity}
-          accent={stats?.topAlert ? 'danger' : 'pulse'}
-          delay={0.25}
-        />
-      </div>
+    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
+      <StatCard
+        label="Burn Commits"
+        value={isLoading ? '...' : formatNumber(stats?.totalBurnCommitments)}
+        icon={TrendingUp}
+        accent="pulse"
+        delay={0}
+      />
+      <StatCard
+        label="Burned Tokens"
+        value={isLoading ? '...' : formatNumber(stats?.totalBurnedTokens)}
+        icon={Fish}
+        accent="whale"
+        delay={0.05}
+      />
+      <StatCard
+        label="Transforms"
+        value={isLoading ? '...' : formatNumber(stats?.totalTransforms)}
+        icon={Activity}
+        accent="alpha"
+        delay={0.1}
+      />
+      <StatCard
+        label="Token Data"
+        value={isLoading ? '...' : formatNumber(stats?.totalTokenData)}
+        icon={Users}
+        accent="amber"
+        delay={0.15}
+      />
+      <StatCard
+        label="Action Points"
+        value={isLoading ? '...' : formatNumber(stats?.totalActionPointsDistributed)}
+        icon={Zap}
+        accent="danger"
+        delay={0.2}
+      />
     </div>
   );
 }

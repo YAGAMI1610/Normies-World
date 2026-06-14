@@ -1,7 +1,7 @@
 // apps/web/src/hooks/useSiweAuth.ts
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { SiweMessage } from 'siwe';
 import { authApi } from '@/lib/api';
 import { useAuthStore } from '@/lib/stores/authStore';
@@ -32,6 +32,25 @@ export function useSiweAuth() {
   const { setAuth, logout, walletAddress } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const restore = async () => {
+      if (walletAddress) return;
+      const token = localStorage.getItem('na_token');
+      if (!token) return;
+      try {
+        const data = await authApi.me();
+        if (data?.id && data?.primaryWallet) {
+          setAuth(token, data.id, data.primaryWallet.toLowerCase());
+        }
+      } catch {
+        localStorage.removeItem('na_token');
+        localStorage.removeItem('na_wallet');
+      }
+    };
+
+    if (typeof window !== 'undefined') restore();
+  }, [setAuth, walletAddress]);
 
   const connectWallet = useCallback(async () => {
     if (!window.ethereum) {
@@ -72,8 +91,10 @@ export function useSiweAuth() {
       })) as string;
 
       const { token, user } = await authApi.verify(address, signature, message);
-      setAuth(token, user.id, user.primaryWallet ?? address);
-      return address;
+      const wallet = (user.primaryWallet ?? address).toLowerCase();
+      localStorage.setItem('na_wallet', wallet);
+      setAuth(token, user.id, wallet);
+      return wallet;
     } catch (err: any) {
       setError(err?.message ?? 'Sign-in failed');
       throw err;
