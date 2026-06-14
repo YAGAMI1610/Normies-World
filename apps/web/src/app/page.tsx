@@ -9,14 +9,13 @@ import { WhaleRadar } from '@/components/whale/WhaleRadar';
 import { TraitHeatmap } from '@/components/dashboard/TraitHeatmap';
 import { AIInsightPanel } from '@/components/dashboard/AIInsightPanel';
 import { ReputationLeaderboard } from '@/components/reputation/ReputationLeaderboard';
-import { BattleLeaderboard } from '@/components/battle/BattleLeaderboard';
 import { FloorChart } from '@/components/dashboard/FloorChart';
 import { AgentExplorer } from '@/components/dashboard/AgentExplorer';
 import { useSocket } from '@/hooks/useSocket';
 import { useAlertStore } from '@/lib/stores/alertStore';
 
 export default function HomePage() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'whales' | 'battle' | 'timemachine' | 'profile'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'whales' | 'timemachine' | 'profile'>('dashboard');
   const { addAlert } = useAlertStore();
   
   useSocket({
@@ -66,9 +65,6 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Battle leaderboard full width */}
-              <BattleLeaderboard />
-
               {/* Agent Explorer */}
               <AgentExplorer />
             </motion.div>
@@ -83,18 +79,6 @@ export default function HomePage() {
               transition={{ duration: 0.25 }}
             >
               <WhalePage />
-            </motion.div>
-          )}
-
-          {activeTab === 'battle' && (
-            <motion.div
-              key="battle"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.25 }}
-            >
-              <BattlePage />
             </motion.div>
           )}
 
@@ -130,6 +114,5 @@ export default function HomePage() {
 // Lazy sub-page imports
 import dynamic from 'next/dynamic';
 const WhalePage = dynamic(() => import('@/components/whale/WhalePage'), { ssr: false });
-const BattlePage = dynamic(() => import('@/components/battle/BattlePage'), { ssr: false });
 const TimeMachinePage = dynamic(() => import('@/components/timemachine/TimeMachinePage'), { ssr: false });
 const ProfilePage = dynamic(() => import('@/components/reputation/ProfilePage'), { ssr: false });

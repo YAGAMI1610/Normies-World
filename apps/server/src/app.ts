@@ -14,7 +14,6 @@ import dashboardRouter from './routes/dashboard';
 import alertsRouter from './routes/alerts';
 import whalesRouter from './routes/whales';
 import reputationRouter from './routes/reputation';
-import battleRouter from './routes/battle';
 import marketRouter from './routes/market';
 import historyRouter from './routes/history';
 import aiRouter from './routes/ai';
@@ -22,7 +21,6 @@ import normiesRouter from './routes/normies';
 import authMiddleware from './middleware/auth';
 import { startAlertScheduler } from './jobs/alertScheduler';
 import { startWhaleScoreScheduler } from './jobs/whaleScoreScheduler';
-import { registerBattleSocket } from './services/battleEngine';
 
 const app = express();
 const httpServer = createServer(app);
@@ -44,9 +42,6 @@ subscriber.connect().then(() => {
     io.emit('whale:move', payload);
   });
 });
-
-// Register battle socket handlers
-registerBattleSocket(io);
 
 // Middleware
 app.use(cors({ origin: process.env.WEB_ORIGIN ?? '*', credentials: true }));
@@ -70,7 +65,6 @@ app.use('/api/dashboard',  dashboardRouter);
 app.use('/api/alerts',     alertsRouter);
 app.use('/api/whales',     whalesRouter);
 app.use('/api/reputation', reputationRouter);
-app.use('/api/battle',     authMiddleware, battleRouter);
 app.use('/api/market',     marketRouter);
 app.use('/api/history',    historyRouter);
 app.use('/api/ai',         aiRouter);

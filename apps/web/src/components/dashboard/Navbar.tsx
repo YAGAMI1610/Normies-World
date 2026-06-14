@@ -2,7 +2,7 @@
 
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { motion } from 'framer-motion';
-import { Bell, Zap, Fish, Clock, User, LayoutDashboard, Swords } from 'lucide-react';
+import { Bell, Zap, Fish, Clock, User, LayoutDashboard } from 'lucide-react';
 import { useAlertStore } from '@/lib/stores/alertStore';
 
 interface NavbarProps {
@@ -13,7 +13,6 @@ interface NavbarProps {
 const tabs = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'whales',    label: 'Whale Intel', icon: Fish },
-  { id: 'battle',   label: 'Battle',       icon: Swords },
   { id: 'timemachine', label: 'Time Machine', icon: Clock },
   { id: 'profile',  label: 'Profile',      icon: User },
 ];
