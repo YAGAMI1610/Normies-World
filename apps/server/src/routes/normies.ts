@@ -100,9 +100,11 @@ router.get('/holders/:address', async (req: Request, res: Response) => {
         where: { tokenId: { in: tokenIds } },
         select: { tokenId: true, rarityRank: true, rarityScore: true },
       });
-      const rarityMap = new Map(normieRecords.map(n => [n.tokenId, n]));
+      const rarityMap = new Map<number, { rarityRank: number | null; rarityScore: number | null }>(
+        normieRecords.map((n) => [n.tokenId, n])
+      );
 
-      return tokenIds.map(id => ({
+      return tokenIds.map((id) => ({
         tokenId: id,
         imageUrl: normiesApi.imagePngUrl(id),
         rarityRank: rarityMap.get(id)?.rarityRank ?? null,

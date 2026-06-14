@@ -62,7 +62,7 @@ async function startMatch(
   };
 
   activeMatches.set(matchId, match);
-  await redis.set(`battle:match:${matchId}`, JSON.stringify(match), { EX: 3600 });
+  await redis.set(`battle:match:${matchId}`, JSON.stringify(match), 'EX', 3600);
 
   // Create DB record
   await prisma.match.create({
@@ -166,7 +166,7 @@ export function registerBattleSocket(io: SocketServer) {
         const winnerId = defender.hp <= 0 ? attacker.userId : (match.player1.hp >= match.player2.hp ? match.player1.userId : match.player2.userId);
         await finishMatch(io, match, winnerId);
       } else {
-        await redis.set(`battle:match:${matchId}`, JSON.stringify(match), { EX: 3600 });
+        await redis.set(`battle:match:${matchId}`, JSON.stringify(match), 'EX', 3600);
       }
     });
 

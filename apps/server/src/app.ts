@@ -2,10 +2,10 @@
 // Normies Alpha — Express + Socket.io server
 
 import 'dotenv/config';
-import { existsSync } from 'fs';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import { existsSync } from 'fs';
 import { createServer } from 'http';
 import { Server as SocketServer } from 'socket.io';
 import { redis } from './lib/redis';
@@ -36,10 +36,12 @@ export const io = new SocketServer(httpServer, {
 const subscriber = redis.duplicate();
 subscriber.connect().then(() => {
   subscriber.subscribe('alerts:new', (message) => {
-    io.emit('alert:new', JSON.parse(message));
+    const payload = typeof message === 'string' ? JSON.parse(message) : message;
+    io.emit('alert:new', payload);
   });
   subscriber.subscribe('whale:move', (message) => {
-    io.emit('whale:move', JSON.parse(message));
+    const payload = typeof message === 'string' ? JSON.parse(message) : message;
+    io.emit('whale:move', payload);
   });
 });
 
@@ -53,21 +55,14 @@ app.use(express.json());
 // Health check
 app.get('/health', (_req, res) => res.json({ ok: true, ts: Date.now() }));
 
-// Serve built frontend if available
 const frontendRoot = path.join(__dirname, '../../web/.next');
+const frontendPublicRoot = path.join(__dirname, '../../web/public');
 const frontendIndexPath = path.join(frontendRoot, 'server', 'app', 'index.html');
 
+if (existsSync(frontendPublicRoot)) {
+  app.use(express.static(frontendPublicRoot));
+}
 app.use('/_next', express.static(frontendRoot));
-
-// Root route
-app.get('/', (_req, res) => {
-  if (existsSync(frontendIndexPath)) {
-    res.sendFile(frontendIndexPath);
-    return;
-  }
-
-  res.json({ status: 'Normies-World API is live', timestamp: Date.now() });
-});
 
 // Routes
 app.use('/api/auth',       authRouter);
@@ -80,6 +75,19 @@ app.use('/api/market',     marketRouter);
 app.use('/api/history',    historyRouter);
 app.use('/api/ai',         aiRouter);
 app.use('/api/normies',    normiesRouter);
+
+// Root route and fallback
+app.get('*', (req, res) => {
+  if (req.path.startsWith('/api') || req.path.startsWith('/_next')) {
+    return res.status(404).json({ status: 'Not found' });
+  }
+
+  if (existsSync(frontendIndexPath)) {
+    return res.sendFile(frontendIndexPath);
+  }
+
+  res.json({ status: 'Normies-World API is live', timestamp: Date.now() });
+});
 
 // Start background jobs
 startAlertScheduler().catch(console.error);
